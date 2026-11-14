@@ -16,8 +16,14 @@
 
   const DURATION = 10000;
 
-  // A quick rise in and fade out, or none with the system's "reduce motion" setting.
+  // A quick rise in and fade out, or none with the system's "reduce motion" setting. Closing
+  // with a button is instant, since the click itself is the cue.
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let clicked = $state(false);
+  const click = (action: () => void) => () => {
+    clicked = true;
+    action();
+  };
 
   // The countdown pauses once the pointer moves over the toast, not when the toast merely
   // appears under a pointer that's standing still.
@@ -28,16 +34,16 @@
   class="toast"
   role="status"
   in:fly|global={{ y: 8, duration: still ? 0 : 200 }}
-  out:fade|global={{ duration: still ? 0 : 150 }}
+  out:fade|global={{ duration: still || clicked ? 0 : 150 }}
   onpointermove={() => (paused = true)}
   onpointerleave={() => (paused = false)}
 >
   <span class="message">{message}</span>
   <span class="action">
     {#if onundo}
-      <button onclick={onundo}>Undo</button>
+      <button onclick={click(onundo)}>Undo</button>
     {:else}
-      <button onclick={ondismiss}>OK</button>
+      <button onclick={click(ondismiss)}>OK</button>
     {/if}
     {#if proto.countdown === 'c'}
       <Countdown shape="outline" radius={8} inset={-3} duration={DURATION} {paused} ondone={ondismiss} />

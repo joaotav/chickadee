@@ -23,6 +23,15 @@
   // was when Save was clicked.
   let paused = $state(false);
 
+  // PROTOTYPE for #48: closing on its own fades the content first. OK closes at once.
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let fading = $state(false);
+  function fadeOut() {
+    if (still) return close();
+    fading = true;
+    setTimeout(close, 150);
+  }
+
   const hasCategories = $derived(loaded?.spaces.some((space) => space.categories.length > 0));
 
   onMount(async () => {
@@ -64,7 +73,7 @@
   }
 </script>
 
-<main onpointermove={() => (paused = true)} onpointerleave={() => (paused = false)}>
+<main class:fading onpointermove={() => (paused = true)} onpointerleave={() => (paused = false)}>
   <h1>Save to workspace</h1>
   {#if error}
     <p class="notice">Couldn't save: {error}</p>
@@ -74,7 +83,7 @@
       <span class="action">
         <button class="ok" onclick={close}>OK</button>
         {#if proto.countdown === 'c'}
-          <Countdown shape="outline" radius={8} inset={-3} duration={CLOSE_AFTER_MS} {paused} ondone={close} />
+          <Countdown shape="outline" radius={8} inset={-3} duration={CLOSE_AFTER_MS} {paused} ondone={fadeOut} />
         {/if}
       </span>
     </div>
@@ -85,7 +94,7 @@
         hidden={proto.countdown === 'd'}
         duration={CLOSE_AFTER_MS}
         {paused}
-        ondone={close}
+        ondone={fadeOut}
       />
     {/if}
   {:else if !loaded}
@@ -112,6 +121,10 @@
     width: 320px;
     overflow: hidden;
     padding: 14px 16px 16px;
+  }
+  .fading {
+    opacity: 0;
+    transition: opacity 150ms;
   }
   h1 {
     margin: 0 0 12px;
