@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import Countdown from '@/components/Countdown.svelte';
+  import { proto } from '@/lib/prototype.svelte';
 
   let {
     message,
@@ -7,23 +8,39 @@
     ondismiss,
   }: {
     message: string;
-    /** Without it, the toast only shows the message. */
+    /** Without it, the toast shows OK instead of Undo. */
     onundo?: () => void;
     ondismiss: () => void;
   } = $props();
 
-  const DURATION = 8000;
+  const DURATION = 10000;
 
-  onMount(() => {
-    const timer = setTimeout(ondismiss, DURATION);
-    return () => clearTimeout(timer);
-  });
+  // The countdown pauses once the pointer moves over the toast, not when the toast merely
+  // appears under a pointer that's standing still.
+  let paused = $state(false);
 </script>
 
-<div class="toast" role="status">
+<div class="toast" role="status" onpointermove={() => (paused = true)} onpointerleave={() => (paused = false)}>
   <span class="message">{message}</span>
-  {#if onundo}
-    <button onclick={onundo}>Undo</button>
+  <span class="action">
+    {#if onundo}
+      <button onclick={onundo}>Undo</button>
+    {:else}
+      <button onclick={ondismiss}>OK</button>
+    {/if}
+    {#if proto.countdown === 'c'}
+      <Countdown shape="outline" radius={8} inset={-3} duration={DURATION} {paused} ondone={ondismiss} />
+    {/if}
+  </span>
+  {#if proto.countdown !== 'c'}
+    <Countdown
+      shape={proto.countdown === 'b' ? 'bar' : 'outline'}
+      radius={10}
+      hidden={proto.countdown === 'd'}
+      duration={DURATION}
+      {paused}
+      ondone={ondismiss}
+    />
   {/if}
 </div>
 
@@ -38,6 +55,7 @@
     gap: 16px;
     max-width: calc(100vw - 32px);
     padding: 10px 10px 10px 16px;
+    overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--card);
@@ -49,8 +67,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  button {
+  .action {
+    position: relative;
     flex: none;
+    display: flex;
+  }
+  button {
     height: 28px;
     padding: 0 12px;
     border-radius: 6px;

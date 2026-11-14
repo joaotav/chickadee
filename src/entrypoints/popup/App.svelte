@@ -1,22 +1,35 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import Countdown from '@/components/Countdown.svelte';
   import SaveForm from '@/components/SaveForm.svelte';
   import { getWorkspace } from '@/lib/bookmarks';
   import { getLastCategoryId } from '@/lib/meta';
   import { currentPage, savePage, type Page } from '@/lib/save';
   import { getSettings } from '@/lib/settings';
+  import { proto } from '@/lib/prototype.svelte';
   import { placeName, toSpaces, toWebUrl, type Space } from '@/lib/tree';
 
   // How long "Saved to …" shows before the popup closes.
-  const CLOSE_AFTER_MS = 1000;
+  const CLOSE_AFTER_MS = 3000;
+
+  // PROTOTYPE for #48: the new tab page shows this popup in a frame, already saved.
+  const demo = new URLSearchParams(location.search).has('demo');
 
   let loaded = $state<{ page: Page | null; spaces: Space[]; lastCategoryId?: string } | null>(null);
   let saved = $state<string | null>(null);
   let error = $state<string | null>(null);
 
+  // The countdown pauses once the pointer moves over the popup, not while it stays where it
+  // was when Save was clicked.
+  let paused = $state(false);
+
   const hasCategories = $derived(loaded?.spaces.some((space) => space.categories.length > 0));
 
   onMount(async () => {
+    if (demo) {
+      saved = 'Work › Reading';
+      return;
+    }
     try {
       const [page, workspace, lastCategoryId, settings] = await Promise.all([
         currentPage(),
@@ -43,16 +56,38 @@
     }
     const space = spaces.find((space) => space.categories.some((category) => category.id === categoryId))!;
     saved = placeName(space, space.categories.find((category) => category.id === categoryId));
-    setTimeout(() => window.close(), CLOSE_AFTER_MS);
+  }
+
+  function close() {
+    if (demo) parent.postMessage('prototype:close', location.origin);
+    else window.close();
   }
 </script>
 
-<main>
+<main onpointermove={() => (paused = true)} onpointerleave={() => (paused = false)}>
   <h1>Save to workspace</h1>
   {#if error}
     <p class="notice">Couldn't save: {error}</p>
   {:else if saved}
     <p class="saved" role="status"><span aria-hidden="true">✓</span> Saved to {saved}</p>
+    <div class="buttons">
+      <span class="action">
+        <button class="primary" onclick={close} {@attach (button) => button.focus()}>OK</button>
+        {#if proto.countdown === 'c'}
+          <Countdown shape="outline" radius={8} inset={-3} duration={CLOSE_AFTER_MS} {paused} ondone={close} />
+        {/if}
+      </span>
+    </div>
+    {#if proto.countdown !== 'c'}
+      <Countdown
+        shape={proto.countdown === 'b' ? 'bar' : 'outline'}
+        radius={8}
+        hidden={proto.countdown === 'd'}
+        duration={CLOSE_AFTER_MS}
+        {paused}
+        ondone={close}
+      />
+    {/if}
   {:else if !loaded}
     <!-- Still loading. -->
   {:else if !loaded.page || !toWebUrl(loaded.page.url)}
@@ -73,6 +108,7 @@
 
 <style>
   main {
+    position: relative;
     width: 320px;
     padding: 14px 16px 16px;
   }
@@ -92,5 +128,24 @@
   }
   .saved span {
     color: var(--accent);
+  }
+  .buttons {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .action {
+    position: relative;
+    display: flex;
+  }
+  .primary {
+    height: 30px;
+    padding: 0 18px;
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .primary:hover {
+    filter: brightness(1.1);
   }
 </style>

@@ -5,6 +5,7 @@
   import CategoryCard from '@/components/CategoryCard.svelte';
   import Menu from '@/components/Menu.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
+  import PrototypeSwitcher from '@/components/PrototypeSwitcher.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
   import SpaceForm from '@/components/SpaceForm.svelte';
@@ -23,7 +24,7 @@
   let spaceForm = $state<'new' | 'rename' | null>(null);
   // The toast after a delete holds what was deleted, so it can be undone. Only the most
   // recent delete can be.
-  let toast = $state<{ message: string; deleted?: BookmarkNode } | null>(null);
+  let toast = $state<{ message: string; deleted?: BookmarkNode; demo?: boolean } | null>(null);
   let activeId = $state<string | undefined>();
   let error = $state<string | null>(null);
   let collapsed = $state<string[]>([]);
@@ -302,8 +303,20 @@
 {#if toast}
   <!-- Keyed, so a new delete restarts the countdown. -->
   {#key toast}
-    <Toast message={toast.message} onundo={toast.deleted ? undo : undefined} ondismiss={() => (toast = null)} />
+    <Toast
+      message={toast.message}
+      onundo={toast.deleted ? undo : toast.demo ? () => (toast = null) : undefined}
+      ondismiss={() => (toast = null)}
+    />
   {/key}
+{/if}
+
+<!-- PROTOTYPE for #48, only in development builds. -->
+{#if import.meta.env.DEV}
+  <PrototypeSwitcher
+    onshow={(kind) =>
+      (toast = kind === 'undo' ? { message: 'Deleted “Example”', demo: true } : { message: 'Couldn’t restore “Example”' })}
+  />
 {/if}
 
 <style>
