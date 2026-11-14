@@ -51,7 +51,9 @@
 </div>
 
 <style>
+  /* Content-box, so the border doesn't take room from the popup inside. */
   .popup {
+    box-sizing: content-box;
     position: fixed;
     top: 60px;
     right: 16px;

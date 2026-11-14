@@ -72,7 +72,7 @@
     <p class="saved" role="status"><span aria-hidden="true">✓</span> Saved to {saved}</p>
     <div class="buttons">
       <span class="action">
-        <button class="ok" onclick={close} {@attach (button) => button.focus()}>OK</button>
+        <button class="ok" onclick={close}>OK</button>
         {#if proto.countdown === 'c'}
           <Countdown shape="outline" radius={8} inset={-3} duration={CLOSE_AFTER_MS} {paused} ondone={close} />
         {/if}
