@@ -88,9 +88,11 @@
       </span>
     </div>
     {#if proto.countdown !== 'c'}
+      <!-- Kept 2px inside the edges, which the browser rounds off and clips. -->
       <Countdown
         shape={proto.countdown === 'b' ? 'bar' : 'outline'}
-        radius={8}
+        radius={6}
+        inset={2}
         hidden={proto.countdown === 'd'}
         duration={CLOSE_AFTER_MS}
         {paused}
