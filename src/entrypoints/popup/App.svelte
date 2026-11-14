@@ -72,7 +72,7 @@
     <p class="saved" role="status"><span aria-hidden="true">✓</span> Saved to {saved}</p>
     <div class="buttons">
       <span class="action">
-        <button class="primary" onclick={close} {@attach (button) => button.focus()}>OK</button>
+        <button class="ok" onclick={close} {@attach (button) => button.focus()}>OK</button>
         {#if proto.countdown === 'c'}
           <Countdown shape="outline" radius={8} inset={-3} duration={CLOSE_AFTER_MS} {paused} ondone={close} />
         {/if}
@@ -110,6 +110,7 @@
   main {
     position: relative;
     width: 320px;
+    overflow: hidden;
     padding: 14px 16px 16px;
   }
   h1 {
@@ -137,15 +138,14 @@
     position: relative;
     display: flex;
   }
-  .primary {
-    height: 30px;
-    padding: 0 18px;
+  .ok {
+    height: 28px;
+    padding: 0 12px;
     border-radius: 6px;
-    background: var(--accent);
-    color: var(--bg);
+    color: var(--accent);
     font-weight: 600;
   }
-  .primary:hover {
-    filter: brightness(1.1);
+  .ok:hover {
+    background: var(--row-hover);
   }
 </style>

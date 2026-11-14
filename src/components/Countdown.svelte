@@ -66,9 +66,6 @@
       transform: scaleX(0);
     }
   }
-  .outline {
-    overflow: visible;
-  }
   rect {
     x: 1px;
     y: 1px;
