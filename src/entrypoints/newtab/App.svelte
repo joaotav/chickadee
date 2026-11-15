@@ -5,6 +5,7 @@
   import CategoryCard from '@/components/CategoryCard.svelte';
   import Menu from '@/components/Menu.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
+  import PrototypeSwitcher from '@/components/PrototypeSwitcher.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
   import SpaceForm from '@/components/SpaceForm.svelte';
@@ -14,7 +15,8 @@
   import { isFolder, type BookmarkNode } from '@/lib/node';
   import { getActiveSpaceId, getCollapsed, getIcons, setActiveSpaceId, setCollapsed, watchCollapsed, watchIcons } from '@/lib/meta';
   import { cacheSettings, getCachedSettings, getSettings, setSettings, watchSettings, type Settings } from '@/lib/settings';
-  import { defaultTitle, joinEmoji, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
+  import { defaultTitle, joinEmoji, splitEmoji, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
+  import { proto } from '@/lib/prototype.svelte';
   import { openInBackground } from '@/lib/tabs';
   import { remove, restore } from '@/lib/undo';
 
@@ -115,6 +117,53 @@
     moving = moving.then(() => move(id, { parentId, before })).catch(load);
   }
 
+  // PROTOTYPE for #25 and #50: Rename shows the form, and Delete the question, under the
+  // space's tab, or under the ⋯ in variant D.
+  let action = $state<{ kind: 'rename' | 'delete'; id: string; left: number; top: number } | null>(null);
+  let actionEl = $state<HTMLElement>();
+  let spaceActionsEl = $state<HTMLElement>();
+  const actionSpace = $derived(action && spaces?.find((space) => space.id === action!.id));
+
+  const bookmarkCount = (space: Space) =>
+    space.unsorted.length + space.categories.reduce((sum, category) => sum + category.links.length, 0);
+  const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+  function deleteQuestion(space: Space) {
+    const name = `“${joinEmoji(space.emoji, space.name)}”`;
+    const categories = space.categories.length;
+    const bookmarks = bookmarkCount(space);
+    const links = plural(bookmarks, 'bookmark', 'bookmarks');
+    if (categories === 0) return `Delete space ${name} and its ${links}?`;
+    const its = `its ${plural(categories, 'category', 'categories')}`;
+    return `Delete space ${name} and ${its}${bookmarks > 0 ? ` (${links})` : ''}?`;
+  }
+
+  const deleteSpace = (space: Space) => void deleteItem(space.id, `Deleted space “${joinEmoji(space.emoji, space.name)}”`);
+
+  function startAction(kind: 'rename' | 'delete', id: string, anchor: HTMLElement) {
+    const space = spaces?.find((space) => space.id === id);
+    if (!space) return;
+    // An empty space goes straight away, with Undo.
+    if (kind === 'delete' && space.categories.length === 0 && space.unsorted.length === 0) {
+      action = null;
+      return deleteSpace(space);
+    }
+    const rect = anchor.getBoundingClientRect();
+    spaceForm = null;
+    action = { kind, id, left: Math.max(16, Math.min(rect.left, innerWidth - 456)), top: rect.bottom + 10 };
+  }
+
+  async function renameSpace(id: string, title: string) {
+    action = null;
+    const split = splitEmoji(title);
+    if (split.name) await update(id, { title: joinEmoji(split.emoji, split.name) });
+  }
+
+  // Clicking away or Escape leaves the space as it was.
+  function onWindowPointerDown(event: PointerEvent) {
+    if (action?.kind === 'delete' && !actionEl?.contains(event.target as Node)) action = null;
+  }
+
   async function deleteItem(id: string, message: string) {
     toast = { message, deleted: await remove(id) };
   }
@@ -174,6 +223,8 @@
   });
 </script>
 
+<svelte:window onpointerdown={onWindowPointerDown} />
+
 <header class="bar">
   {#if spaces && spaces.length > 0}
     <SpaceTabs
@@ -182,24 +233,22 @@
       unsortedId={rootId}
       onselect={select}
       onmove={(id, before) => rootId && moveItem(id, rootId, before)}
+      onaction={startAction}
+      onrename={(id, title) => void renameSpace(id, title)}
     />
   {/if}
-  <div class="space-actions">
-    {#if active && isRealSpace(active)}
+  <div class="space-actions" bind:this={spaceActionsEl}>
+    {#if active && isRealSpace(active) && proto.variant === 'd'}
       <Menu
         label="Actions for space {active.name}"
         items={[
-          { label: 'Rename', onselect: () => (spaceForm = 'rename') },
-          {
-            label: 'Delete',
-            onselect: () => void deleteItem(active.id, `Deleted space “${joinEmoji(active.emoji, active.name)}”`),
-            danger: true,
-          },
+          { label: 'Rename', onselect: () => startAction('rename', active.id, spaceActionsEl!) },
+          { label: 'Delete', onselect: () => startAction('delete', active.id, spaceActionsEl!), danger: true },
         ]}
       />
     {/if}
     {#if spaces}
-      <button class="new-space" aria-label="New space" onclick={() => (spaceForm = 'new')}>
+      <button class="new-space" aria-label="New space" onclick={() => ((action = null), (spaceForm = 'new'))}>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
       </button>
     {/if}
@@ -299,6 +348,56 @@
   {/if}
 </main>
 
+{#if action && actionSpace}
+  {@const space = actionSpace}
+  {#key action}
+    <div class="anchored" style:left="{action.left}px" style:top="{action.top}px" bind:this={actionEl}>
+      {#if action.kind === 'rename'}
+        <SpaceForm
+          heading="Rename space"
+          emoji={space.emoji}
+          name={space.name}
+          onsave={(emoji, name) => void renameSpace(space.id, joinEmoji(emoji, name))}
+          oncancel={() => (action = null)}
+        />
+      {:else}
+        <!-- The listener catches Escape from the buttons inside, which are interactive. -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <div
+          class="confirm"
+          role="alertdialog"
+          tabindex="-1"
+          aria-label="Delete space"
+          onkeydown={(event) => {
+            if (event.key === 'Escape') {
+              event.stopPropagation();
+              action = null;
+            }
+          }}
+        >
+          <p>{deleteQuestion(space)}</p>
+          <div class="buttons">
+            <button
+              class="danger"
+              onclick={() => {
+                const target = space;
+                action = null;
+                deleteSpace(target);
+              }}>Delete</button
+            >
+            <button onclick={() => (action = null)} {@attach (button) => button.focus()}>Cancel</button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/key}
+{/if}
+
+<!-- PROTOTYPE for #25 and #50, only in development builds. -->
+{#if import.meta.env.DEV}
+  <PrototypeSwitcher />
+{/if}
+
 {#if toast}
   <!-- Keyed, so a new delete restarts the countdown. -->
   {#key toast}
@@ -350,6 +449,51 @@
     top: calc(100% + 10px);
     left: 0;
     z-index: 20;
+  }
+  .anchored {
+    position: fixed;
+    z-index: 20;
+  }
+  .confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: max-content;
+    max-width: min(440px, calc(100vw - 32px));
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    box-shadow: 0 12px 32px #0006;
+  }
+  .confirm p {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .confirm .buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .confirm button {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 6px;
+    color: var(--muted);
+  }
+  .confirm button:hover {
+    background: var(--row-hover);
+    color: var(--fg);
+  }
+  .confirm .danger {
+    background: var(--danger);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .confirm .danger:hover {
+    background: var(--danger);
+    color: var(--bg);
+    filter: brightness(1.1);
   }
   .end {
     display: flex;
