@@ -14,8 +14,8 @@ beforeEach(() => {
 const spaces = async () => toSpaces(await getWorkspace());
 
 describe('addSample', () => {
-  it('fills the Workspace with spaces that cover the awkward cases', async () => {
-    await addSample();
+  it('fills the Workspace with a few spaces that cover the awkward cases', async () => {
+    await addSample('few');
     const sample = await spaces();
     const categories = sample.flatMap((space) => space.categories);
     expect(sample.length).toBeGreaterThan(2);
@@ -27,10 +27,20 @@ describe('addSample', () => {
     expect(placesOf(sample, 'https://developer.mozilla.org/')).toHaveLength(2);
   });
 
+  it('fills the Workspace with many spaces, categories and links', async () => {
+    await addSample('many');
+    const sample = await spaces();
+    const categories = sample.flatMap((space) => space.categories);
+    expect(sample.length).toBeGreaterThanOrEqual(15);
+    expect(sample.some((space) => space.categories.length > 20)).toBe(true);
+    expect(categories.some((category) => category.links.length >= 100)).toBe(true);
+    expect(categories.flatMap((category) => category.links).length).toBeGreaterThan(500);
+  });
+
   it('adds the whole set again on each call', async () => {
-    await addSample();
+    await addSample('few');
     const once = (await spaces()).map((space) => space.name);
-    await addSample();
+    await addSample('few');
     expect((await spaces()).map((space) => space.name)).toEqual([...once, ...once]);
   });
 });

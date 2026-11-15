@@ -75,10 +75,15 @@
         </fieldset>
       {/each}
       {#if import.meta.env.DEV}
-        <!-- Development builds only. Loaded on demand, so releases leave the sample out. -->
-        <button class="sample" onclick={async () => (await import('@/lib/sample')).addSample()}>
-          Add sample bookmarks
-        </button>
+        <!-- Development builds only. Loaded on demand, so releases leave the samples out. -->
+        <div class="samples">
+          <button class="sample" onclick={async () => (await import('@/lib/sample')).addSample('few')}>
+            Add a few bookmarks
+          </button>
+          <button class="sample" onclick={async () => (await import('@/lib/sample')).addSample('many')}>
+            Add many bookmarks
+          </button>
+        </div>
       {/if}
     </div>
   {/if}
@@ -163,7 +168,12 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+  .samples {
+    display: flex;
+    gap: 6px;
+  }
   .sample {
+    flex: 1;
     padding: 5px 10px;
     border: 1px dashed var(--border);
     border-radius: 7px;
