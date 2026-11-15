@@ -6,11 +6,10 @@
   import { getLastCategoryId } from '@/lib/meta';
   import { currentPage, savePage, type Page } from '@/lib/save';
   import { getSettings } from '@/lib/settings';
-  import { proto } from '@/lib/prototype.svelte';
   import { placeName, toSpaces, toWebUrl, type Space } from '@/lib/tree';
 
   // How long "Saved to …" shows before the popup closes.
-  const CLOSE_AFTER_MS = 3000;
+  const CLOSE_AFTER_MS = 4000;
 
   // PROTOTYPE for #48: the new tab page shows this popup in a frame, already saved.
   const demo = new URLSearchParams(location.search).has('demo');
@@ -80,26 +79,10 @@
   {:else if saved}
     <p class="saved" role="status"><span aria-hidden="true">✓</span> Saved to {saved}</p>
     <div class="buttons">
-      <span class="action">
-        <button class="ok" onclick={close}>OK</button>
-        {#if proto.countdown === 'c'}
-          <Countdown shape="outline" radius={8} inset={-3} duration={CLOSE_AFTER_MS} {paused} ondone={fadeOut} />
-        {/if}
-      </span>
+      <button class="ok" onclick={close}>OK</button>
     </div>
-    {#if proto.countdown !== 'c'}
-      <!-- Firefox rounds the popup's corners by about 16px and clips what's under them, so the
-           line runs 2px inside the edges with matching corners. -->
-      <Countdown
-        shape={proto.countdown === 'b' ? 'bar' : 'outline'}
-        radius={13}
-        inset={2}
-        hidden={proto.countdown === 'd'}
-        duration={CLOSE_AFTER_MS}
-        {paused}
-        ondone={fadeOut}
-      />
-    {/if}
+    <!-- No line in the popup: the countdown only times it. -->
+    <Countdown shape="bar" hidden duration={CLOSE_AFTER_MS} {paused} ondone={fadeOut} />
   {:else if !loaded}
     <!-- Still loading. -->
   {:else if !loaded.page || !toWebUrl(loaded.page.url)}
@@ -149,10 +132,6 @@
   .buttons {
     display: flex;
     justify-content: flex-end;
-  }
-  .action {
-    position: relative;
-    display: flex;
   }
   .ok {
     height: 28px;
