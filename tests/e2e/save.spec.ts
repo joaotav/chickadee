@@ -33,6 +33,28 @@ test('saves the current page into a category, and an open new tab shows it', asy
   await expect(dashboard.getByRole('list', { name: 'Links in Docs' }).getByRole('link', { name: 'GitLab' })).toBeVisible();
 });
 
+test('closes after 4 seconds once saved, or at once with OK', async ({ dashboard, popup }) => {
+  await addBookmarks(dashboard, sample);
+  const page = await popup(gitlab);
+  await page.clock.install();
+  // Clicking Save leaves the pointer resting on the popup, which mustn't hold it open.
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status')).toHaveText(/Saved to Work › Repos/);
+  await expect(page.getByRole('heading', { name: 'Save to workspace' })).toHaveCount(0);
+  await page.clock.runFor(3900);
+  expect(page.isClosed()).toBe(false);
+  const closed = page.waitForEvent('close');
+  await page.clock.runFor(300);
+  await closed;
+
+  const again = await popup(gitlab);
+  await again.getByRole('button', { name: 'Save' }).click();
+  const closedAgain = again.waitForEvent('close');
+  // A real click can fail when the page closes before Playwright's checks after it finish.
+  await again.getByRole('button', { name: 'OK' }).dispatchEvent('click');
+  await closedAgain;
+});
+
 test('opens on the last used category, and says where a page is already saved', async ({ dashboard, popup }) => {
   await addBookmarks(dashboard, sample);
   const first = await popup(gitlab);
