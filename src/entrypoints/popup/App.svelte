@@ -35,7 +35,7 @@
 
   onMount(async () => {
     if (demo) {
-      saved = 'Work › Reading';
+      saved = new URLSearchParams(location.search).get('demo') || 'Work › Reading';
       return;
     }
     try {
@@ -127,6 +127,8 @@
     margin: 0;
     padding: 12px 0;
     font-weight: 600;
+    /* Long names wrap, even a single long word. */
+    overflow-wrap: anywhere;
   }
   .saved span {
     color: var(--accent);
