@@ -74,6 +74,12 @@
           </div>
         </fieldset>
       {/each}
+      {#if import.meta.env.DEV}
+        <!-- Development builds only. Loaded on demand, so releases leave the sample out. -->
+        <button class="sample" onclick={async () => (await import('@/lib/sample')).addSample()}>
+          Add sample bookmarks
+        </button>
+      {/if}
     </div>
   {/if}
 </div>
@@ -156,6 +162,15 @@
   label:has(:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+  .sample {
+    padding: 5px 10px;
+    border: 1px dashed var(--border);
+    border-radius: 7px;
+    color: var(--muted);
+  }
+  .sample:hover {
+    color: var(--fg);
   }
   input {
     position: absolute;
