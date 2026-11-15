@@ -3,6 +3,7 @@
   import { dragHandleZone, setKeyboardDragTrigger, type DndEvent } from 'svelte-dnd-action';
   import { flip } from 'svelte/animate';
   import CategoryCard from '@/components/CategoryCard.svelte';
+  import DeleteSpace from '@/components/DeleteSpace.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
@@ -19,9 +20,9 @@
 
   let spaces = $state<Space[] | null>(null);
   let rootId = $state<string | undefined>();
-  // The new space form shows under the + button. Rename shows under the selected tab,
-  // `tabOffset` pixels to the left of the + button.
-  let spaceForm = $state<'new' | 'rename' | null>(null);
+  // The new space form shows under the + button. Rename and the delete question show under the
+  // selected tab, `tabOffset` pixels to the left of the + button.
+  let spaceForm = $state<'new' | 'rename' | 'delete' | null>(null);
   let tabOffset = $state(0);
   let spaceActions: HTMLElement;
   // The toast after a delete holds what was deleted, so it can be undone. Only the most
@@ -119,9 +120,13 @@
     moving = moving.then(() => move(id, { parentId, before })).catch(load);
   }
 
-  function rename(tab: HTMLElement) {
+  function openUnderTab(kind: 'rename' | 'delete', tab: HTMLElement) {
+    // An empty space goes without asking, with Undo like everything else.
+    if (kind === 'delete' && active && active.categories.length === 0 && active.unsorted.length === 0) {
+      return deleteSpace(active);
+    }
     tabOffset = tab.getBoundingClientRect().left - spaceActions.getBoundingClientRect().left;
-    spaceForm = 'rename';
+    spaceForm = kind;
   }
 
   function deleteSpace(space: Space) {
@@ -196,8 +201,8 @@
       unsortedId={rootId}
       onselect={select}
       onmove={(id, before) => rootId && moveItem(id, rootId, before)}
-      onrename={rename}
-      ondelete={() => active && deleteSpace(active)}
+      onrename={(tab) => openUnderTab('rename', tab)}
+      ondelete={(tab) => openUnderTab('delete', tab)}
     />
   {/if}
   <div class="space-actions" bind:this={spaceActions}>
@@ -208,15 +213,22 @@
     {/if}
     {#if spaceForm}
       <div class="popover" style:left="{spaceForm === 'new' ? 0 : tabOffset}px">
-        {#key spaceForm}
-          <SpaceForm
-            heading={spaceForm === 'new' ? 'New space' : 'Rename space'}
-            emoji={spaceForm === 'rename' ? active?.emoji : null}
-            name={spaceForm === 'rename' ? active?.name : ''}
-            onsave={saveSpace}
-            oncancel={() => (spaceForm = null)}
-          />
-        {/key}
+        {#if spaceForm === 'delete'}
+          {#if active}
+            {@const space = active}
+            <DeleteSpace {space} ondelete={() => deleteSpace(space)} oncancel={() => (spaceForm = null)} />
+          {/if}
+        {:else}
+          {#key spaceForm}
+            <SpaceForm
+              heading={spaceForm === 'new' ? 'New space' : 'Rename space'}
+              emoji={spaceForm === 'rename' ? active?.emoji : null}
+              name={spaceForm === 'rename' ? active?.name : ''}
+              onsave={saveSpace}
+              oncancel={() => (spaceForm = null)}
+            />
+          {/key}
+        {/if}
       </div>
     {/if}
   </div>

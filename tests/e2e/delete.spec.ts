@@ -66,9 +66,12 @@ test('deletes a link, and undo puts it back in its place', async ({ dashboard })
   expect(await tree(dashboard, ids['Repos']!)).toEqual(['Repos', ['GitHub', ['Old', ['GitLab']], 'Codeberg']]);
 });
 
-test('deletes a space, and undo opens it again', async ({ dashboard }) => {
+test('asks before deleting a space with bookmarks, and undo opens it again', async ({ dashboard }) => {
   await addBookmarks(dashboard, sample);
   await deleteFrom(dashboard, 'Actions for space Work');
+  const question = dashboard.getByRole('group', { name: 'Delete space “💼 Work” and its 2 categories (4 bookmarks)?' });
+  await question.getByRole('button', { name: 'Delete' }).click();
+  await expect(question).toBeHidden();
   await expect(dashboard.getByRole('tab')).toHaveText(['Home']);
   await expect(dashboard.getByRole('status')).toHaveText(/Deleted space “💼 Work”/);
 
@@ -76,6 +79,37 @@ test('deletes a space, and undo opens it again', async ({ dashboard }) => {
   await expect(dashboard.getByRole('tab')).toHaveText([/💼\s*Work/, /Home/]);
   await expect(dashboard.getByRole('tab', { name: /Work/ })).toHaveAttribute('aria-selected', 'true');
   await expect(dashboard.getByRole('link', { name: 'GitHub' })).toBeVisible();
+});
+
+test('keeps the space after Cancel, Escape or a click elsewhere', async ({ dashboard }) => {
+  const ids = await addBookmarks(dashboard, sample);
+  const before = await tree(dashboard, ids['💼 Work']!);
+  const question = dashboard.getByRole('group', { name: /^Delete space “💼 Work”/ });
+
+  await deleteFrom(dashboard, 'Actions for space Work');
+  await question.getByRole('button', { name: 'Cancel' }).click();
+  await expect(question).toBeHidden();
+
+  await deleteFrom(dashboard, 'Actions for space Work');
+  await expect(question.getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await dashboard.keyboard.press('Escape');
+  await expect(question).toBeHidden();
+
+  await deleteFrom(dashboard, 'Actions for space Work');
+  await dashboard.getByRole('heading', { name: /^Docs/ }).click();
+  await expect(question).toBeHidden();
+
+  await expect(dashboard.getByRole('tab')).toHaveText([/Work/, /Home/]);
+  expect(await tree(dashboard, ids['💼 Work']!)).toEqual(before);
+});
+
+test('deletes an empty space without asking', async ({ dashboard }) => {
+  await addBookmarks(dashboard, [...sample, { title: 'Empty', children: [] }]);
+  await dashboard.getByRole('tab', { name: 'Empty' }).click();
+  await deleteFrom(dashboard, 'Actions for space Empty');
+  await expect(dashboard.getByRole('status')).toHaveText(/Deleted space “Empty”/);
+  await expect(dashboard.getByRole('tab')).toHaveText([/Work/, /Home/]);
+  await expect(dashboard.getByRole('group', { name: /^Delete space/ })).toHaveCount(0);
 });
 
 test('only the most recent delete can be undone', async ({ dashboard }) => {

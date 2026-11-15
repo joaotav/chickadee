@@ -292,7 +292,7 @@ Verify: change every setting, open a new tab, the choices stuck. On a second com
 
 ### M4. Create, edit, delete
 
-- New space from the "+" tab. Rename and delete a space from the ⋯ in its tab, shown on the selected tab only.
+- New space from the "+" tab. Rename and delete a space from the ⋯ in its tab, shown on the selected tab only. Deleting a space that holds categories or bookmarks asks first, naming how many of each.
 - New category button. Add link form inside a category with URL and optional title. The title defaults to the URL's hostname.
 - Inline rename for categories and links, inline URL edit for links. Enter saves, Escape cancels.
 - Delete with an undo toast lasting 10 seconds, paused while the pointer is over it. Undo recreates the snapshotted subtree at its original position and moves its `collapsed` and `icon:` metadata to the new IDs. Only the most recent delete is undoable.
