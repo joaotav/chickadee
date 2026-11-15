@@ -2,17 +2,20 @@
   import { onMount } from 'svelte';
   import SaveForm from '@/components/SaveForm.svelte';
   import { getWorkspace } from '@/lib/bookmarks';
+  import { countdown } from '@/lib/countdown';
   import { getLastCategoryId } from '@/lib/meta';
   import { currentPage, savePage, type Page } from '@/lib/save';
   import { getSettings } from '@/lib/settings';
   import { placeName, toSpaces, toWebUrl, type Space } from '@/lib/tree';
 
-  // How long "Saved to …" shows before the popup closes.
-  const CLOSE_AFTER_MS = 1000;
+  // How long "Saved to …" shows before the popup closes on its own.
+  const CLOSE_AFTER_MS = 4000;
 
   let loaded = $state<{ page: Page | null; spaces: Space[]; lastCategoryId?: string } | null>(null);
   let saved = $state<string | null>(null);
   let error = $state<string | null>(null);
+  let timer: ReturnType<typeof countdown> | undefined;
+  let fading = $state(false);
 
   const hasCategories = $derived(loaded?.spaces.some((space) => space.categories.length > 0));
 
@@ -43,16 +46,29 @@
     }
     const space = spaces.find((space) => space.categories.some((category) => category.id === categoryId))!;
     saved = placeName(space, space.categories.find((category) => category.id === categoryId));
-    setTimeout(() => window.close(), CLOSE_AFTER_MS);
+    timer = countdown(CLOSE_AFTER_MS, fadeOut);
+  }
+
+  // Closing on its own fades the message out first. OK closes the popup at once.
+  function fadeOut() {
+    fading = true;
+    setTimeout(() => window.close(), 150);
   }
 </script>
 
-<main>
-  <h1>Save to workspace</h1>
+<!-- The countdown pauses once the pointer moves over the popup, not while it stays where it
+     was when Save was clicked. -->
+<main class:fading onpointermove={() => timer?.pause()} onpointerleave={() => timer?.resume()}>
+  {#if !saved}
+    <h1>Save to workspace</h1>
+  {/if}
   {#if error}
     <p class="notice">Couldn't save: {error}</p>
   {:else if saved}
     <p class="saved" role="status"><span aria-hidden="true">✓</span> Saved to {saved}</p>
+    <div class="buttons">
+      <button onclick={() => window.close()}>OK</button>
+    </div>
   {:else if !loaded}
     <!-- Still loading. -->
   {:else if !loaded.page || !toWebUrl(loaded.page.url)}
@@ -85,12 +101,37 @@
     margin: 0;
     color: var(--muted);
   }
+  .fading {
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fading {
+      transition: none;
+    }
+  }
   .saved {
     margin: 0;
     padding: 12px 0;
     font-weight: 600;
+    /* Long names wrap, even a single long word. */
+    overflow-wrap: anywhere;
   }
   .saved span {
     color: var(--accent);
+  }
+  .buttons {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .buttons button {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 6px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .buttons button:hover {
+    background: var(--row-hover);
   }
 </style>

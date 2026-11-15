@@ -10,6 +10,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - A category's collapse chevron sits at the right of its header, after the link count, pointing up while the category is open and down while it's collapsed ([#28](https://github.com/joaotav/chickadee/issues/28))
 - The settings button shows a gear ([#24](https://github.com/joaotav/chickadee/issues/24))
 - A category's **⋯** menu lists **Open all bookmarks** first, then **Rename** and **Delete**
+- Messages stay longer and wait for you: the toolbar popup's "Saved to …" shows for 4 seconds instead of 1, and the messages at the bottom of the new tab page for 10 seconds instead of 8. Both pause while the pointer is over them. The popup's **OK** and the messages' **Undo** or **OK** close them at once, and a line around the messages shrinks as their time runs out ([#48](https://github.com/joaotav/chickadee/issues/48))
 
 ## 0.1.0 - 2026-11-08
 

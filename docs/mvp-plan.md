@@ -222,6 +222,7 @@ src/
     search.ts        uFuzzy index and ranking                                  (pure)
     save.ts          read the active tab and save it, for the popup
     tabs.ts          open links in background tabs
+    countdown.ts     a timer that can pause, for messages that close on their own
     undo.ts          remove a subtree with a snapshot, and restore it
   assets/icon.svg    the extension icon, drawn by hand
 tests/
@@ -294,7 +295,7 @@ Verify: change every setting, open a new tab, the choices stuck. On a second com
 - New space from the "+" tab. Rename and delete a space from its tab.
 - New category button. Add link form inside a category with URL and optional title. The title defaults to the URL's hostname.
 - Inline rename for categories and links, inline URL edit for links. Enter saves, Escape cancels.
-- Delete with an undo toast lasting 8 seconds. Undo recreates the snapshotted subtree at its original position and moves its `collapsed` and `icon:` metadata to the new IDs. Only the most recent delete is undoable.
+- Delete with an undo toast lasting 10 seconds, paused while the pointer is over it. Undo recreates the snapshotted subtree at its original position and moves its `collapsed` and `icon:` metadata to the new IDs. Only the most recent delete is undoable.
 - "Open all" on a category opens its links in new background tabs, asking first if there are more than 10.
 
 Verify: delete a category with nested links, undo, the structure and collapse state are back. Rename shows up in the browser's bookmark manager.
