@@ -73,7 +73,9 @@
 </script>
 
 <main class:fading onpointermove={() => (paused = true)} onpointerleave={() => (paused = false)}>
-  <h1>Save to workspace</h1>
+  {#if !saved}
+    <h1>Save to workspace</h1>
+  {/if}
   {#if error}
     <p class="notice">Couldn't save: {error}</p>
   {:else if saved}
