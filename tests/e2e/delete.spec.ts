@@ -96,7 +96,8 @@ test('keeps the space after Cancel, Escape or a click elsewhere', async ({ dashb
   await expect(question).toBeHidden();
 
   await deleteFrom(dashboard, 'Actions for space Work');
-  await dashboard.getByRole('heading', { name: /^Docs/ }).click();
+  // The page's padding, which nothing covers.
+  await dashboard.locator('main').click({ position: { x: 10, y: 10 } });
   await expect(question).toBeHidden();
 
   await expect(dashboard.getByRole('tab')).toHaveText([/Work/, /Home/]);
