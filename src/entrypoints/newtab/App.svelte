@@ -5,6 +5,7 @@
   import CategoryCard from '@/components/CategoryCard.svelte';
   import Menu from '@/components/Menu.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
+  import PrototypeSwitcher from '@/components/PrototypeSwitcher.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
   import SpaceForm from '@/components/SpaceForm.svelte';
@@ -15,6 +16,7 @@
   import { getActiveSpaceId, getCollapsed, getIcons, setActiveSpaceId, setCollapsed, watchCollapsed, watchIcons } from '@/lib/meta';
   import { cacheSettings, getCachedSettings, getSettings, setSettings, watchSettings, type Settings } from '@/lib/settings';
   import { defaultTitle, joinEmoji, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
+  import { proto } from '@/lib/prototype.svelte';
   import { openInBackground } from '@/lib/tabs';
   import { remove, restore } from '@/lib/undo';
 
@@ -174,7 +176,9 @@
   });
 </script>
 
-<header class="bar">
+<!-- PROTOTYPE: the tabs and their buttons share the room left of the search. -->
+<header class="bar" class:wrapping={proto.variant === 'c'}>
+  <div class="spaces" class:fixed={proto.variant === 'd'}>
   {#if spaces && spaces.length > 0}
     <SpaceTabs
       {spaces}
@@ -216,6 +220,7 @@
         {/key}
       </div>
     {/if}
+  </div>
   </div>
   <div class="end">
     {#if cardIds.length > 0}
@@ -299,6 +304,11 @@
   {/if}
 </main>
 
+<!-- PROTOTYPE, only in development builds. -->
+{#if import.meta.env.DEV}
+  <PrototypeSwitcher />
+{/if}
+
 {#if toast}
   <!-- Keyed, so a new delete restarts the countdown. -->
   {#key toast}
@@ -318,6 +328,21 @@
     padding: 0 16px;
     border-bottom: 1px solid var(--border);
     background: var(--bar);
+  }
+  .spaces {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .spaces.fixed {
+    flex: none;
+  }
+  .bar.wrapping {
+    height: auto;
+    min-height: 52px;
+    padding-block: 8px;
   }
   .space-actions {
     position: relative;
@@ -353,6 +378,7 @@
   }
   .end {
     display: flex;
+    flex: none;
     align-items: center;
     gap: 8px;
     margin-left: auto;
