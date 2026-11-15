@@ -1,11 +1,20 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import SpaceTabs from '@/components/SpaceTabs.svelte';
 import type { Space } from '@/lib/tree';
 
 const space = (id: string, name: string, emoji: string | null = null): Space => ({ id, name, emoji, unsorted: [], categories: [] });
 const spaces = [space('s1', 'Work', '💼'), space('s2', 'Home')];
-const props = { spaces, activeId: 's1', unsortedId: undefined, onselect: () => {}, onmove: () => {}, onrename: () => {}, ondelete: () => {} };
+const props = {
+  spaces,
+  activeId: 's1',
+  unsortedId: undefined,
+  room: 1000,
+  onselect: () => {},
+  onmove: () => {},
+  onrename: () => {},
+  ondelete: () => {},
+};
 
 describe('SpaceTabs', () => {
   it('shows one tab per space, with its emoji', () => {
@@ -58,5 +67,33 @@ describe('SpaceTabs', () => {
     await fireEvent.click(menu);
     await fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(ondelete).toHaveBeenCalledExactlyOnceWith(screen.getByRole('tab', { name: /Work/ }));
+  });
+
+  describe('with more tabs than fit', () => {
+    // jsdom has no layout, so every element in the hidden copy of the tabs measures 100 pixels.
+    afterEach(() => vi.restoreAllMocks());
+    const many = ['a', 'b', 'c', 'd', 'e'].map((id) => space(id, id.toUpperCase()));
+    const setup = (activeId: string, onselect = vi.fn()) => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 100 } as DOMRect);
+      // Room for three tabs and the menu button: 8 + 3 × 102 + 102.
+      render(SpaceTabs, { ...props, spaces: many, activeId, room: 416, onselect });
+      return onselect;
+    };
+    const tabNames = () => screen.getAllByRole('tab').map((tab) => tab.textContent?.trim());
+
+    it('shows the tabs that fit and lists the rest in a menu', async () => {
+      const onselect = setup('a');
+      await vi.waitFor(() => expect(tabNames()).toEqual(['A', 'B', 'C']));
+      await fireEvent.click(screen.getByRole('button', { name: '2 more spaces' }));
+      expect(screen.getByRole('button', { name: 'D' })).toBeInTheDocument();
+      await fireEvent.click(screen.getByRole('button', { name: 'E' }));
+      expect(onselect).toHaveBeenCalledWith('e');
+    });
+
+    it('always shows the selected tab', async () => {
+      setup('e');
+      await vi.waitFor(() => expect(tabNames()).toEqual(['A', 'B', 'E']));
+      expect(screen.getByRole('button', { name: '2 more spaces' })).toHaveTextContent('2 more ▾');
+    });
   });
 });

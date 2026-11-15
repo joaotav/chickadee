@@ -9,6 +9,9 @@ Element.prototype.animate ??= function () {
   return animation as unknown as Animation;
 };
 
+// Svelte's flip animation checks for animations already running. None are.
+Element.prototype.getAnimations ??= () => [];
+
 // SpaceTabs remeasures once web fonts have loaded. There are none to wait for.
 if (!document.fonts) Object.defineProperty(document, 'fonts', { value: { ready: Promise.resolve() } });
 

@@ -25,6 +25,9 @@
   let spaceForm = $state<'new' | 'rename' | 'delete' | null>(null);
   let tabOffset = $state(0);
   let spaceActions: HTMLElement;
+  // The tabs get the room left of the search, less the + button and the gap before it.
+  let spacesWidth = $state(0);
+  let actionsWidth = $state(0);
   // The toast after a delete holds what was deleted, so it can be undone. Only the most
   // recent delete can be.
   let toast = $state<{ message: string; deleted?: BookmarkNode } | null>(null);
@@ -194,43 +197,46 @@
 </script>
 
 <header class="bar">
-  {#if spaces && spaces.length > 0}
-    <SpaceTabs
-      {spaces}
-      activeId={active?.id}
-      unsortedId={rootId}
-      onselect={select}
-      onmove={(id, before) => rootId && moveItem(id, rootId, before)}
-      onrename={(tab) => openUnderTab('rename', tab)}
-      ondelete={(tab) => openUnderTab('delete', tab)}
-    />
-  {/if}
-  <div class="space-actions" bind:this={spaceActions}>
-    {#if spaces}
-      <button class="new-space" aria-label="New space" onclick={() => (spaceForm = 'new')}>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
-      </button>
+  <div class="spaces" bind:clientWidth={spacesWidth}>
+    {#if spaces && spaces.length > 0}
+      <SpaceTabs
+        {spaces}
+        activeId={active?.id}
+        unsortedId={rootId}
+        room={spacesWidth - actionsWidth - 8}
+        onselect={select}
+        onmove={(id, before) => rootId && moveItem(id, rootId, before)}
+        onrename={(tab) => openUnderTab('rename', tab)}
+        ondelete={(tab) => openUnderTab('delete', tab)}
+      />
     {/if}
-    {#if spaceForm}
-      <div class="popover" style:left="{spaceForm === 'new' ? 0 : tabOffset}px">
-        {#if spaceForm === 'delete'}
-          {#if active}
-            {@const space = active}
-            <DeleteSpace {space} ondelete={() => deleteSpace(space)} oncancel={() => (spaceForm = null)} />
+    <div class="space-actions" bind:this={spaceActions} bind:clientWidth={actionsWidth}>
+      {#if spaces}
+        <button class="new-space" aria-label="New space" onclick={() => (spaceForm = 'new')}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+        </button>
+      {/if}
+      {#if spaceForm}
+        <div class="popover" style:left="{spaceForm === 'new' ? 0 : tabOffset}px">
+          {#if spaceForm === 'delete'}
+            {#if active}
+              {@const space = active}
+              <DeleteSpace {space} ondelete={() => deleteSpace(space)} oncancel={() => (spaceForm = null)} />
+            {/if}
+          {:else}
+            {#key spaceForm}
+              <SpaceForm
+                heading={spaceForm === 'new' ? 'New space' : 'Rename space'}
+                emoji={spaceForm === 'rename' ? active?.emoji : null}
+                name={spaceForm === 'rename' ? active?.name : ''}
+                onsave={saveSpace}
+                oncancel={() => (spaceForm = null)}
+              />
+            {/key}
           {/if}
-        {:else}
-          {#key spaceForm}
-            <SpaceForm
-              heading={spaceForm === 'new' ? 'New space' : 'Rename space'}
-              emoji={spaceForm === 'rename' ? active?.emoji : null}
-              name={spaceForm === 'rename' ? active?.name : ''}
-              onsave={saveSpace}
-              oncancel={() => (spaceForm = null)}
-            />
-          {/key}
-        {/if}
-      </div>
-    {/if}
+        </div>
+      {/if}
+    </div>
   </div>
   <div class="end">
     {#if cardIds.length > 0}
@@ -333,6 +339,13 @@
     padding: 0 16px;
     border-bottom: 1px solid var(--border);
     background: var(--bar);
+  }
+  .spaces {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
   }
   .space-actions {
     position: relative;

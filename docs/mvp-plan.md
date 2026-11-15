@@ -58,7 +58,7 @@ Settled with the throwaway prototype `prototypes/new-tab-layout.prototype.html`,
 ```
 
 - A top bar holds the space tabs on the left, then a "+" button for a new space. The search box and a settings button sit on the right.
-- Space tabs are a pill-style segmented control: a rounded track with the active tab as a raised pill that slides to the tab you click. Each tab shows an optional emoji before the space name. There are no link counts on tabs.
+- Space tabs are a pill-style segmented control: a rounded track with the active tab as a raised pill that slides to the tab you click. Each tab shows an optional emoji before the space name, cut short with "…" past 200 pixels. There are no link counts on tabs. When the tabs don't fit, the bar shows the ones that do, always with the selected one, and lists the rest under a "N more ▾" button at the end.
 - Creating or renaming a space offers a grid of about 30 emoji plus "no icon", and accepts any emoji typed or pasted. The emoji is stored in the folder name, see [Data model](#data-model).
 - The active space's categories are cards in a grid. Cards fill a row left to right, then wrap. Each row is as tall as its tallest card. Grid is the default layout. Board and Masonry come after the MVP as layout settings. Masonry moves cards between columns when heights change, which fights drag and drop, so it may be dropped. The board hides categories past the right edge of the screen.
 - Each card has a header with the category name, its link count and a collapse chevron, then its links, then "+ Add bookmark".
