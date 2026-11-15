@@ -350,7 +350,7 @@
     line-height: 1;
   }
   .name {
-    max-width: 180px;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
