@@ -88,10 +88,11 @@
       </span>
     </div>
     {#if proto.countdown !== 'c'}
-      <!-- Kept 2px inside the edges, which the browser rounds off and clips. -->
+      <!-- Firefox rounds the popup's corners by about 16px and clips what's under them, so the
+           line runs 2px inside the edges with matching corners. -->
       <Countdown
         shape={proto.countdown === 'b' ? 'bar' : 'outline'}
-        radius={6}
+        radius={13}
         inset={2}
         hidden={proto.countdown === 'd'}
         duration={CLOSE_AFTER_MS}
