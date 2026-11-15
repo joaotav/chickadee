@@ -3,7 +3,6 @@
   import { dragHandleZone, setKeyboardDragTrigger, type DndEvent } from 'svelte-dnd-action';
   import { flip } from 'svelte/animate';
   import CategoryCard from '@/components/CategoryCard.svelte';
-  import Menu from '@/components/Menu.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
@@ -20,7 +19,11 @@
 
   let spaces = $state<Space[] | null>(null);
   let rootId = $state<string | undefined>();
+  // The new space form shows under the + button. Rename shows under the selected tab,
+  // `tabOffset` pixels to the left of the + button.
   let spaceForm = $state<'new' | 'rename' | null>(null);
+  let tabOffset = $state(0);
+  let spaceActions: HTMLElement;
   // The toast after a delete holds what was deleted, so it can be undone. Only the most
   // recent delete can be.
   let toast = $state<{ message: string; deleted?: BookmarkNode } | null>(null);
@@ -60,6 +63,7 @@
   }
 
   function select(id: string) {
+    if (spaceForm !== 'new') spaceForm = null;
     activeId = id;
     void setActiveSpaceId(id);
   }
@@ -113,6 +117,16 @@
   let moving = Promise.resolve();
   function moveItem(id: string, parentId: string, before: string | undefined) {
     moving = moving.then(() => move(id, { parentId, before })).catch(load);
+  }
+
+  function rename(tab: HTMLElement) {
+    tabOffset = tab.getBoundingClientRect().left - spaceActions.getBoundingClientRect().left;
+    spaceForm = 'rename';
+  }
+
+  function deleteSpace(space: Space) {
+    spaceForm = null;
+    void deleteItem(space.id, `Deleted space “${joinEmoji(space.emoji, space.name)}”`);
   }
 
   async function deleteItem(id: string, message: string) {
@@ -182,29 +196,18 @@
       unsortedId={rootId}
       onselect={select}
       onmove={(id, before) => rootId && moveItem(id, rootId, before)}
+      onrename={rename}
+      ondelete={() => active && deleteSpace(active)}
     />
   {/if}
-  <div class="space-actions">
-    {#if active && isRealSpace(active)}
-      <Menu
-        label="Actions for space {active.name}"
-        items={[
-          { label: 'Rename', onselect: () => (spaceForm = 'rename') },
-          {
-            label: 'Delete',
-            onselect: () => void deleteItem(active.id, `Deleted space “${joinEmoji(active.emoji, active.name)}”`),
-            danger: true,
-          },
-        ]}
-      />
-    {/if}
+  <div class="space-actions" bind:this={spaceActions}>
     {#if spaces}
       <button class="new-space" aria-label="New space" onclick={() => (spaceForm = 'new')}>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
       </button>
     {/if}
     {#if spaceForm}
-      <div class="popover">
+      <div class="popover" style:left="{spaceForm === 'new' ? 0 : tabOffset}px">
         {#key spaceForm}
           <SpaceForm
             heading={spaceForm === 'new' ? 'New space' : 'Rename space'}

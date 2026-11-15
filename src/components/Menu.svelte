@@ -8,7 +8,16 @@
 </script>
 
 <script lang="ts">
-  let { label, items }: { label: string; items: MenuItem[] } = $props();
+  let {
+    label,
+    items,
+    align = 'right',
+  }: {
+    label: string;
+    items: MenuItem[];
+    /** Which edge of the button the list lines up with. Left suits a button near the left of the page. */
+    align?: 'left' | 'right';
+  } = $props();
 
   let open = $state(false);
   let root: HTMLElement;
@@ -39,7 +48,7 @@
     <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="12.5" cy="8" r="1.3" /></svg>
   </button>
   {#if open}
-    <div class="items">
+    <div class="items" class:left={align === 'left'}>
       {#each items as item (item.label)}
         <button class:danger={item.danger} onclick={() => select(item)}>{item.label}</button>
       {/each}
@@ -83,6 +92,10 @@
     border-radius: 8px;
     background: var(--card);
     box-shadow: 0 8px 24px #0006;
+  }
+  .items.left {
+    right: auto;
+    left: 0;
   }
   .items button {
     padding: 6px 10px;
