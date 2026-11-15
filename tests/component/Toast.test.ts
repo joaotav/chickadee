@@ -14,15 +14,32 @@ describe('Toast', () => {
     expect(onundo).toHaveBeenCalledOnce();
   });
 
-  it('has no Undo button without onundo', () => {
-    render(Toast, { message: 'Couldn’t restore “Repos”', ondismiss: () => {} });
-    expect(screen.queryByRole('button')).toBeNull();
+  it('shows OK instead of Undo without onundo, which dismisses it', async () => {
+    const ondismiss = vi.fn();
+    render(Toast, { message: 'Couldn’t restore “Repos”', ondismiss });
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    await fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    expect(ondismiss).toHaveBeenCalledOnce();
   });
 
-  it('dismisses itself after 8 seconds', () => {
+  it('dismisses itself after 10 seconds', () => {
     const ondismiss = vi.fn();
     render(Toast, { message: 'Deleted “Repos”', onundo: () => {}, ondismiss });
-    vi.advanceTimersByTime(7999);
+    vi.advanceTimersByTime(9999);
+    expect(ondismiss).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(ondismiss).toHaveBeenCalledOnce();
+  });
+
+  it('pauses its countdown while the pointer is over it', async () => {
+    const ondismiss = vi.fn();
+    render(Toast, { message: 'Deleted “Repos”', onundo: () => {}, ondismiss });
+    vi.advanceTimersByTime(4000);
+    await fireEvent.pointerMove(screen.getByRole('status'));
+    vi.advanceTimersByTime(60_000);
+    expect(ondismiss).not.toHaveBeenCalled();
+    await fireEvent.pointerLeave(screen.getByRole('status'));
+    vi.advanceTimersByTime(5999);
     expect(ondismiss).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(ondismiss).toHaveBeenCalledOnce();

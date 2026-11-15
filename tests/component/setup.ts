@@ -14,3 +14,7 @@ if (!document.fonts) Object.defineProperty(document, 'fonts', { value: { ready: 
 
 // The search results scroll the selected one into view. Nothing scrolls here.
 Element.prototype.scrollIntoView ??= function () {};
+
+// Svelte's prefersReducedMotion reads a media query. Here nothing matches.
+window.matchMedia ??= (query) =>
+  ({ matches: false, media: query, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
