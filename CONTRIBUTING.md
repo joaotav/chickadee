@@ -60,6 +60,8 @@ Dependabot's pull requests are the exception: they have no issue and no changelo
 
 CI runs `npm run check` and `npm run test:e2e` on every pull request. Firefox can't be tested under automation, so check changes to the extension by hand with `npm run dev:firefox`. [docs/mvp-plan.md](docs/mvp-plan.md#testing) explains the test layers.
 
+For checking by hand, development builds add an **Add sample bookmarks** button to the settings panel. It adds a set of spaces, categories and links that covers the awkward cases, like long names, empty categories and a category with more than 10 links. Each click adds the set again. The development browser has its own profile, so the samples never mix with your real bookmarks. The set is in `src/lib/sample.ts`.
+
 ## Changelog
 
 [CHANGELOG.md](CHANGELOG.md) tells users how the extension changed. It is not a list of merged pull requests; the commit history already is one. Write entries for users, not developers, and leave out changes they won't notice, like CI, tests or refactoring.
