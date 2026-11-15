@@ -11,6 +11,8 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - The settings button shows a gear ([#24](https://github.com/joaotav/chickadee/issues/24))
 - A category's **⋯** menu lists **Open all bookmarks** first, then **Rename** and **Delete**
 - Messages stay longer and wait for you: the toolbar popup's "Saved to …" shows for 4 seconds instead of 1, and the messages at the bottom of the new tab page for 10 seconds instead of 8. Both pause while the pointer is over them. The popup's **OK** and the messages' **Undo** or **OK** close them at once, and a line around the messages shrinks as their time runs out ([#48](https://github.com/joaotav/chickadee/issues/48))
+- A space's **⋯** menu sits inside its tab, on the selected tab only, so it's clear which space **Rename** and **Delete** change. The rename form opens under the tab ([#25](https://github.com/joaotav/chickadee/issues/25))
+- Deleting a space that holds categories or bookmarks asks first, saying how many of each will go, as in "Delete space “Work” and its 3 categories (24 bookmarks)?". **Cancel**, Escape or a click elsewhere keeps it. An empty space is still deleted straight away, and **Undo** still follows ([#50](https://github.com/joaotav/chickadee/issues/50))
 
 ## 0.1.0 - 2026-11-08
 

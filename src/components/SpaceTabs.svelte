@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { dndzone, type DndEvent } from 'svelte-dnd-action';
   import { flip } from 'svelte/animate';
+  import Menu from '@/components/Menu.svelte';
   import type { Space } from '@/lib/tree';
 
   let {
@@ -10,6 +11,8 @@
     unsortedId,
     onselect,
     onmove,
+    onrename,
+    ondelete,
   }: {
     spaces: Space[];
     activeId: string | undefined;
@@ -18,6 +21,9 @@
     onselect: (id: string) => void;
     /** A space dropped before `before`, or at the end without it. */
     onmove: (id: string, before: string | undefined) => void;
+    /** Rename or Delete for the selected space, from its tab's ⋯ menu, with the tab to show a form under. */
+    onrename: (tab: HTMLElement) => void;
+    ondelete: (tab: HTMLElement) => void;
   } = $props();
 
   // Follows the dragged tab around, until the move is saved and the spaces come back from
@@ -33,13 +39,18 @@
     if (ids.join() !== before.join()) onmove(detail.info.id, ids[ids.indexOf(detail.info.id) + 1]);
   }
 
+  // Only the selected space's tab has a ⋯ menu, so it's clear which space the menu changes.
+  // Unsorted has none.
+  const selected = $derived(movable.find((space) => space.id === activeId));
+
   let track: HTMLElement;
+  const selectedTab = () => track.querySelector<HTMLElement>('[aria-selected="true"]')!;
   let indicator = $state({ left: 0, width: 0 });
   // Off for the first measurement, so the pill appears in place instead of sliding in from the left.
   let animated = $state(false);
 
   function measure() {
-    const tab = track?.querySelector<HTMLElement>('[aria-selected="true"]');
+    const tab = track && selectedTab();
     if (!tab) return;
     indicator = { left: tab.offsetLeft, width: tab.offsetWidth };
     if (!animated) requestAnimationFrame(() => (animated = true));
@@ -62,44 +73,62 @@
   });
 </script>
 
-<div class="track" role="tablist" bind:this={track}>
+<div class="track" bind:this={track}>
   <span
     class="indicator"
     class:animated
     style:width="{indicator.width}px"
     style:transform="translateX({indicator.left}px)"
   ></span>
-  <!-- The library's automatic roles would replace the tab roles, so they're off. -->
-  <div
-    class="tabs"
-    use:dndzone={{
-      items: movable,
-      type: 'space',
-      flipDurationMs: FLIP_MS,
-      zoneTabIndex: -1,
-      dropTargetStyle: {},
-      autoAriaDisabled: true,
-      useCursorForDetection: true,
-    }}
-    onconsider={({ detail }) => (movable = detail.items)}
-    onfinalize={drop}
-  >
-    {#each movable as space (space.id)}
-      <button
-        class="tab"
-        role="tab"
-        aria-selected={space.id === activeId}
-        onclick={() => onselect(space.id)}
-        animate:flip={{ duration: FLIP_MS }}
-      >
-        {@render label(space)}
+  <div class="tablist" role="tablist">
+    <!-- The library's automatic roles would replace the tab roles, so they're off. -->
+    <div
+      class="tabs"
+      use:dndzone={{
+        items: movable,
+        type: 'space',
+        flipDurationMs: FLIP_MS,
+        zoneTabIndex: -1,
+        dropTargetStyle: {},
+        autoAriaDisabled: true,
+        useCursorForDetection: true,
+      }}
+      onconsider={({ detail }) => (movable = detail.items)}
+      onfinalize={drop}
+    >
+      {#each movable as space (space.id)}
+        <button
+          class="tab"
+          role="tab"
+          aria-selected={space.id === activeId}
+          class:with-menu={space.id === selected?.id}
+          onclick={() => onselect(space.id)}
+          animate:flip={{ duration: FLIP_MS }}
+        >
+          {@render label(space)}
+        </button>
+      {/each}
+    </div>
+    {#if unsorted}
+      <button class="tab" role="tab" aria-selected={unsorted.id === activeId} onclick={() => onselect(unsorted.id)}>
+        {@render label(unsorted)}
       </button>
-    {/each}
+    {/if}
   </div>
-  {#if unsorted}
-    <button class="tab" role="tab" aria-selected={unsorted.id === activeId} onclick={() => onselect(unsorted.id)}>
-      {@render label(unsorted)}
-    </button>
+  <!-- Outside the tab list, so the list holds only tabs and each tab stays one element that can
+       be dragged. It sits over the end of the selected tab, which leaves room for it, and slides
+       along with the pill. -->
+  {#if selected}
+    <div class="tab-menu" class:animated style:transform="translateX({indicator.left + indicator.width}px)">
+      <Menu
+        label="Actions for space {selected.name}"
+        align="left"
+        items={[
+          { label: 'Rename', onselect: () => onrename(selectedTab()) },
+          { label: 'Delete', onselect: () => ondelete(selectedTab()), danger: true },
+        ]}
+      />
+    </div>
   {/if}
 </div>
 
@@ -118,6 +147,7 @@
     border-radius: 10px;
     background: var(--bg);
   }
+  .tablist,
   .tabs {
     display: flex;
     gap: 2px;
@@ -149,6 +179,18 @@
     font-weight: 500;
     white-space: nowrap;
     transition: color 0.15s;
+  }
+  .tab.with-menu {
+    padding-right: 34px;
+  }
+  /* Its right edge lines up with the pill's, less the room left for it in the tab. */
+  .tab-menu {
+    position: absolute;
+    top: 7px;
+    left: -28px;
+  }
+  .tab-menu.animated {
+    transition: transform 0.25s cubic-bezier(0.3, 0.7, 0.4, 1);
   }
   .tab:hover,
   .tab[aria-selected='true'] {

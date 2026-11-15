@@ -45,8 +45,10 @@ test('takes any emoji typed into the space form', async ({ dashboard }) => {
 });
 
 test('renames a space and changes its icon, or cancels with Escape', async ({ dashboard }) => {
-  const ids = await addBookmarks(dashboard, [{ title: '💼 Work', children: [] }]);
+  const ids = await addBookmarks(dashboard, [{ title: '💼 Work', children: [] }, { title: 'Home', children: [] }]);
   await expect(dashboard.getByRole('tab', { name: /Work/ })).toBeVisible();
+  // Only the selected tab has the menu.
+  await expect(dashboard.getByRole('button', { name: 'Actions for space Home' })).toHaveCount(0);
 
   await dashboard.getByRole('button', { name: 'Actions for space Work' }).click();
   await dashboard.getByRole('button', { name: 'Rename' }).click();
