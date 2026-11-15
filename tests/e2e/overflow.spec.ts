@@ -32,12 +32,14 @@ test('lists the spaces that do not fit in a menu, without widening the page', as
 });
 
 test('works out the tabs again when a space is added', async ({ dashboard }) => {
-  await addBookmarks(dashboard, spaces.slice(0, 5));
-  await dashboard.setViewportSize({ width: 900, height: 600 });
-  await expect(dashboard.getByRole('tab')).toHaveCount(5);
-  await addBookmarks(dashboard, spaces.slice(5));
+  // Two short tabs fit at any font size, so the menu only appears once the rest are added.
+  await addBookmarks(dashboard, spaces.slice(0, 2));
+  await dashboard.setViewportSize({ width: 1280, height: 600 });
+  await expect(dashboard.getByRole('tab')).toHaveCount(2);
+  await expect(dashboard.getByRole('button', { name: /^\d+ more spaces$/ })).toHaveCount(0);
+  await addBookmarks(dashboard, spaces.slice(2));
   await expect(dashboard.getByRole('button', { name: /^\d+ more spaces$/ })).toBeVisible();
-  expect(await dashboard.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(900);
+  expect(await dashboard.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);
 });
 
 test('cuts a long space name short, and shows it whole on hover', async ({ dashboard }) => {
