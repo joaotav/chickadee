@@ -128,9 +128,9 @@
         </ul>
         {#if footer}
           <p class="footer" aria-hidden="true">
-            <span><kbd>↑↓</kbd> pick</span>
-            <span><kbd>↵</kbd> open</span>
-            <span><kbd>{mod} ↵</kbd> or {mod}+click: background tab</span>
+            <span><kbd>↑↓</kbd> Select</span>
+            <span><kbd>↵</kbd> Open</span>
+            <span><kbd>{mod} ↵</kbd> or <kbd>{mod}</kbd>+<kbd>Click</kbd> Open in new tab</span>
           </p>
         {/if}
       {:else}
