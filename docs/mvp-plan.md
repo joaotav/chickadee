@@ -322,6 +322,7 @@ Verify: save a page from each browser. It appears on an open new tab. On Firefox
 - Search box on the right of the top bar. `/` focuses it once the page has focus.
 - uFuzzy over `title + " " + hostname` for every link in every space, including collapsed categories. Results appear in a dropdown under the search box, each showing where the link lives, like "Work › Repos".
 - Arrow keys move the selection. Enter opens in the current tab, Ctrl+Enter or Cmd+Enter in a background tab, Escape clears the search.
+- A footer under the results shows these keys, with ⌘ instead of Ctrl on a Mac (#31).
 - Matched characters are highlighted.
 
 A browser limitation: when a new tab opens, both browsers keep focus in the address bar, and an extension page can't take it. Click the page or press Tab, then `/`. The address bar's own bookmark search (`*` in Firefox, `@bookmarks` in Chrome) also covers the workspace because the links are native bookmarks.
