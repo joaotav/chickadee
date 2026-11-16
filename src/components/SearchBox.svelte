@@ -2,6 +2,8 @@
   import { createSearch, type Result } from '@/lib/search';
   import type { Space } from '@/lib/tree';
   import LinkIcon from './LinkIcon.svelte';
+  // PROTOTYPE
+  import { proto, SEEN_LIMIT } from '@/lib/prototype.svelte';
 
   let {
     spaces,
@@ -21,6 +23,15 @@
   const search = $derived(createSearch(spaces));
   const results = $derived(search(query));
   const open = $derived(focused && query.trim() !== '');
+
+  // PROTOTYPE: the modifier key, the times the results have opened, and which hints show.
+  const mod = $derived(proto.mac ? '⌘' : 'Ctrl');
+  let wasOpen = false;
+  $effect(() => {
+    if (open && !wasOpen) proto.seen++;
+    wasOpen = open;
+  });
+  const footer = $derived(proto.variant === 'a' || (proto.variant === 'c' && proto.seen <= SEEN_LIMIT));
 
   function choose(result: Result, background: boolean) {
     onopen(result.link.url, background);
@@ -106,9 +117,22 @@
                 <span class="title">{@render highlighted(result.title)}</span>
                 <span class="where">{result.place} · {@render highlighted(result.address)}</span>
               </span>
+              {#if proto.variant === 'b' && i === selected}
+                <span class="row-hint" aria-hidden="true">
+                  <span><kbd>↵</kbd> open</span>
+                  <span><kbd>{mod} ↵</kbd> background</span>
+                </span>
+              {/if}
             </li>
           {/each}
         </ul>
+        {#if footer}
+          <p class="footer" aria-hidden="true">
+            <span><kbd>↑↓</kbd> pick</span>
+            <span><kbd>↵</kbd> open</span>
+            <span><kbd>{mod} ↵</kbd> or {mod}+click: background tab</span>
+          </p>
+        {/if}
       {:else}
         <p class="none">No links match</p>
       {/if}
@@ -203,6 +227,46 @@
     background: none;
     color: var(--accent);
     font-weight: 600;
+  }
+  /* PROTOTYPE */
+  .footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 6px 0 0;
+    padding: 8px 8px 2px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .footer span,
+  .row-hint span {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+  }
+  .row-hint {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .dropdown kbd {
+    position: static;
+    transform: none;
+    min-width: 16px;
+    background: var(--bg);
+    padding: 0 4px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font: inherit;
+    line-height: 15px;
+    text-align: center;
   }
   .none {
     margin: 0;
