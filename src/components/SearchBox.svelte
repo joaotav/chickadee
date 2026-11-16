@@ -22,6 +22,9 @@
   const results = $derived(search(query));
   const open = $derived(focused && query.trim() !== '');
 
+  // Macs use Cmd where other systems use Ctrl.
+  const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl';
+
   function choose(result: Result, background: boolean) {
     onopen(result.link.url, background);
   }
@@ -109,6 +112,12 @@
             </li>
           {/each}
         </ul>
+        <!-- Hidden from screen readers, which announce the results as a list to pick from. -->
+        <p class="keys" aria-hidden="true">
+          <span><kbd>↑↓</kbd> Select</span>
+          <span><kbd>↵</kbd> Open</span>
+          <span><kbd>{mod} ↵</kbd> or <kbd>{mod}</kbd>+<kbd>Click</kbd> Open in new tab</span>
+        </p>
       {:else}
         <p class="none">No links match</p>
       {/if}
@@ -137,7 +146,7 @@
   input::placeholder {
     color: var(--muted);
   }
-  kbd {
+  .search > kbd {
     position: absolute;
     top: 50%;
     right: 8px;
@@ -203,6 +212,33 @@
     background: none;
     color: var(--accent);
     font-weight: 600;
+  }
+  /* Wraps onto a second line if a wide font doesn't leave room for one. */
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 6px 0 0;
+    padding: 8px 8px 2px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .keys span {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+  }
+  .keys kbd {
+    min-width: 16px;
+    padding: 0 4px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    font: inherit;
+    line-height: 15px;
+    text-align: center;
   }
   .none {
     margin: 0;
