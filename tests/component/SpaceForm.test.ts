@@ -62,4 +62,26 @@ describe('SpaceForm', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(oncancel).toHaveBeenCalledTimes(2);
   });
+
+  it('closes on a press outside, unless a name has been typed', async () => {
+    const oncancel = vi.fn();
+    render(SpaceForm, { heading: 'New space', onsave: () => {}, oncancel });
+    await fireEvent.pointerDown(nameField());
+    expect(oncancel).not.toHaveBeenCalled();
+    await fireEvent.pointerDown(document.body);
+    expect(oncancel).toHaveBeenCalledOnce();
+    await fireEvent.input(nameField(), { target: { value: 'Launch' } });
+    await fireEvent.pointerDown(document.body);
+    expect(oncancel).toHaveBeenCalledOnce();
+  });
+
+  it('closes on a press outside when renaming, unless the icon or name has changed', async () => {
+    const oncancel = vi.fn();
+    render(SpaceForm, { heading: 'Rename space', emoji: '💼', name: 'Work', onsave: () => {}, oncancel });
+    await fireEvent.pointerDown(document.body);
+    expect(oncancel).toHaveBeenCalledOnce();
+    await fireEvent.click(screen.getByRole('radio', { name: '🏠' }));
+    await fireEvent.pointerDown(document.body);
+    expect(oncancel).toHaveBeenCalledOnce();
+  });
 });

@@ -50,4 +50,16 @@ describe('AddLink', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('textbox', { name: 'URL' })).toBeNull();
   });
+
+  it('closes on a press outside while empty, and stays open once something is typed', async () => {
+    render(AddLink, { onadd: () => {} });
+    const { url } = await open();
+    await fireEvent.pointerDown(url);
+    await fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('textbox', { name: 'URL' })).toBeNull();
+    const { title } = await open();
+    await fireEvent.input(title, { target: { value: 'GitHub' } });
+    await fireEvent.pointerDown(document.body);
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('GitHub');
+  });
 });

@@ -135,7 +135,7 @@ describe('CategoryCard', () => {
     expect(screen.queryByRole('group', { name: 'Open all bookmarks' })).toBeNull();
   });
 
-  it('opens nothing when the question is cancelled or dismissed with Escape', async () => {
+  it('opens nothing when the question is cancelled, dismissed with Escape or by a press outside', async () => {
     const onopenall = vi.fn();
     render(CategoryCard, { ...props, links: many, onopenall });
     await openMenu();
@@ -145,6 +145,12 @@ describe('CategoryCard', () => {
     await openMenu();
     await openAll();
     await fireEvent.keyDown(screen.getByRole('button', { name: 'Open' }), { key: 'Escape' });
+    expect(screen.queryByRole('group', { name: 'Open all bookmarks' })).toBeNull();
+    await openMenu();
+    await openAll();
+    await fireEvent.pointerDown(screen.getByText('Open 11 tabs?'));
+    expect(screen.getByRole('group', { name: 'Open all bookmarks' })).toBeInTheDocument();
+    await fireEvent.pointerDown(document.body);
     expect(screen.queryByRole('group', { name: 'Open all bookmarks' })).toBeNull();
     expect(onopenall).not.toHaveBeenCalled();
   });

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { outside } from '@/lib/outside';
   import { splitEmoji } from '@/lib/tree';
 
   let {
@@ -28,6 +29,11 @@
 
   const focus = (input: HTMLInputElement) => input.focus();
 
+  // A press outside closes the form, unless the name or icon has changed, which it would lose.
+  function closeIfUnchanged() {
+    if (text === name && chosen === emoji) oncancel();
+  }
+
   // Any emoji can be typed or pasted into the "Other" field. Only its first emoji is kept.
   function onCustomInput() {
     const typed = splitEmoji(custom.trim()).emoji;
@@ -53,7 +59,7 @@
 
 <!-- The listener catches Escape from the fields inside, which are interactive. -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<form class="space-form" aria-label={heading} {onsubmit} {onkeydown}>
+<form class="space-form" aria-label={heading} {onsubmit} {onkeydown} {@attach outside(closeIfUnchanged)}>
   <h2>{heading}</h2>
   <input class="name" bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
   <fieldset>

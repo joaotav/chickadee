@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { outside } from '@/lib/outside';
   import { toWebUrl } from '@/lib/tree';
 
   let { onadd }: { onadd: (url: string, title: string) => void } = $props();
@@ -14,6 +15,11 @@
     open = false;
     url = title = '';
     message = null;
+  }
+
+  // A press outside closes the form, unless something has been typed, which it would lose.
+  function closeIfEmpty() {
+    if (url === '' && title === '') close();
   }
 
   function onsubmit(event: SubmitEvent) {
@@ -38,7 +44,7 @@
 {#if open}
   <!-- The listener catches Escape from the fields inside, which are interactive. -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <form {onsubmit} {onkeydown}>
+  <form {onsubmit} {onkeydown} {@attach outside(closeIfEmpty)}>
     <input
       bind:value={url}
       aria-label="URL"
