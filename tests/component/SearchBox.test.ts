@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import SearchBox from '@/components/SearchBox.svelte';
 import type { Space } from '@/lib/tree';
@@ -74,6 +74,21 @@ describe('SearchBox', () => {
     const { box } = setup();
     await type(box, 'zzzz');
     expect(screen.getByText('No links match')).toBeInTheDocument();
+    expect(screen.queryByText(/Open in new tab/)).not.toBeInTheDocument();
+  });
+
+  it('shows the keys under the results, with Cmd on a Mac', async () => {
+    const keys = () => screen.getByText(/Open in new tab/).parentElement!.textContent?.replace(/\s+/g, ' ').trim();
+    const { box } = setup();
+    await type(box, 'git');
+    expect(keys()).toBe('↑↓ Select ↵ Open Ctrl ↵ or Ctrl+Click Open in new tab');
+    cleanup();
+
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    const mac = setup();
+    await type(mac.box, 'git');
+    expect(keys()).toBe('↑↓ Select ↵ Open ⌘ ↵ or ⌘+Click Open in new tab');
+    vi.restoreAllMocks();
   });
 
   it('moves the selection with the arrow keys, wrapping around', async () => {
