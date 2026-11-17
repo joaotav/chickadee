@@ -1,9 +1,8 @@
 <script lang="ts">
+  import { outside } from '@/lib/outside';
   import { joinEmoji, type Space } from '@/lib/tree';
 
   let { space, ondelete, oncancel }: { space: Space; ondelete: () => void; oncancel: () => void } = $props();
-
-  let root: HTMLElement;
 
   const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
@@ -19,14 +18,7 @@
 
   // Cancel has focus, so pressing Enter by accident doesn't delete.
   const focus = (button: HTMLButtonElement) => button.focus();
-
-  // Clicking anywhere else leaves the space as it was.
-  function onWindowPointerDown(event: PointerEvent) {
-    if (!root.contains(event.target as Node)) oncancel();
-  }
 </script>
-
-<svelte:window onpointerdown={onWindowPointerDown} />
 
 <!-- The listener catches Escape from the buttons inside, which are interactive. -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -34,7 +26,7 @@
   class="question"
   role="group"
   aria-labelledby="delete-space-question"
-  bind:this={root}
+  {@attach outside(oncancel)}
   onkeydown={(event) => {
     if (event.key === 'Escape') {
       event.stopPropagation();

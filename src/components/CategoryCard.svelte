@@ -2,6 +2,7 @@
   import { dragHandleZone, type DndEvent } from 'svelte-dnd-action';
   import { flip } from 'svelte/animate';
   import { slide } from 'svelte/transition';
+  import { outside } from '@/lib/outside';
   import type { Link } from '@/lib/tree';
   import AddLink from './AddLink.svelte';
   import Grip from './Grip.svelte';
@@ -131,6 +132,7 @@
       class="confirm"
       role="group"
       aria-label="Open all bookmarks"
+      {@attach outside(() => (confirming = false))}
       onkeydown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation();

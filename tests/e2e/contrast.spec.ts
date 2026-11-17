@@ -32,7 +32,9 @@ test('filled buttons have readable text in every theme, also while hovered', asy
   await dashboard.keyboard.press('Escape');
   expect(themes).toContain('rose-pine-dawn');
 
+  // Typing keeps the form open while the question opens.
   await dashboard.getByRole('button', { name: '+ Add bookmark' }).click();
+  await dashboard.getByRole('textbox', { name: 'URL' }).fill('example.com');
   await dashboard.getByRole('button', { name: 'Actions for space Work' }).click();
   await dashboard.getByRole('button', { name: 'Delete' }).click();
   const buttons = [dashboard.getByRole('button', { name: 'Add', exact: true }), dashboard.getByRole('button', { name: 'Delete', exact: true })];
