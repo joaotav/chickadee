@@ -1,6 +1,6 @@
 # Contributing
 
-Every change except small fixes starts as an issue. Changes are made on a branch and reach `main` through a pull request that is squash-merged once CI passes.
+Every change except small fixes starts as an issue. Changes are made on a branch and reach `main` through a pull request that is merged once CI passes.
 
 - [Issues](#issues)
 - [Branches and commits](#branches-and-commits)
@@ -41,12 +41,12 @@ Each pull request:
 
 - does one thing, which should be clear from its title, description and issue
 - links its issue with `Closes #N`, so merging closes the issue, or with `Part of #N` when the issue takes more than one pull request
-- has a title in Conventional Commits form, because the title becomes the commit subject on `main`, with GitHub adding the PR number: `feat: add display settings (#21)`
+- has a title in Conventional Commits form, because the title becomes the subject of its merge commit on `main`, with the PR number added: `feat: add display settings (#21)`
 - includes tests and updates docs
 - adds a [changelog](#changelog) entry when users will notice the change
 - fills in the checklist from the template
 
-Pull requests are squash-merged into `main` once CI passes. The squashed commit lists the branch's commits in its message, and the branch is deleted after merging.
+Pull requests are merged into `main` with a merge commit once CI passes, so the branch's commits stay as they are, signed and in order. Before merging, fix-ups like "fix a typo in the last commit" are folded into the commit they fix. The branch is deleted after merging. `git log --first-parent main` shows one line per pull request.
 
 Dependabot's pull requests are the exception: they have no issue and no changelog entry.
 
