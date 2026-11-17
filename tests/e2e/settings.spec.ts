@@ -37,7 +37,7 @@ test('starts with the default settings', async ({ dashboard }) => {
 
 test('keeps every changed setting in new tabs', async ({ dashboard, newTab }) => {
   await addBookmarks(dashboard, sample);
-  for (const option of ['Rosé Pine Dawn', 'Compact', 'Title and URL', 'Fixed']) await choose(dashboard, option);
+  for (const option of ['Rosé Pine Dawn', 'Compact', 'Title and URL', 'Fixed width']) await choose(dashboard, option);
   const changed = { layout: 'grid', theme: 'rose-pine-dawn', density: 'compact', titles: 'with-url', sizing: 'fixed' };
   expect(await attributes(dashboard)).toEqual(changed);
 
@@ -46,7 +46,7 @@ test('keeps every changed setting in new tabs', async ({ dashboard, newTab }) =>
   expect(await attributes(later)).toEqual(changed);
   expect(await background(later)).toBe('rgb(250, 244, 237)');
   await later.getByRole('button', { name: 'Settings' }).click();
-  for (const option of ['Grid', 'Rosé Pine Dawn', 'Compact', 'Title and URL', 'Fixed']) {
+  for (const option of ['Grid', 'Rosé Pine Dawn', 'Compact', 'Title and URL', 'Fixed width']) {
     await expect(later.getByRole('radio', { name: option })).toBeChecked();
   }
 });
@@ -82,7 +82,7 @@ test('density, titles and sizing change the cards', async ({ dashboard }) => {
   // Fit content: the card with the long title is wider.
   const [repos, docs] = await widths();
   expect(docs!).toBeGreaterThan(repos!);
-  await choose(dashboard, 'Fixed');
+  await choose(dashboard, 'Fixed width');
   const [fixedRepos, fixedDocs] = await widths();
   expect(fixedDocs).toBe(fixedRepos);
 

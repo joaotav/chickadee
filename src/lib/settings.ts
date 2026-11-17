@@ -12,7 +12,7 @@ export const OPTIONS = {
   },
   density: { comfortable: 'Comfortable', compact: 'Compact' },
   titles: { 'one-line': 'One line', 'two-lines': 'Up to two lines', 'with-url': 'Title and URL' },
-  sizing: { 'fit-content': 'Fit content', fixed: 'Fixed' },
+  sizing: { 'fit-content': 'Fit content', fixed: 'Fixed width' },
 } as const;
 
 export type Settings = { [K in keyof typeof OPTIONS]: keyof (typeof OPTIONS)[K] };

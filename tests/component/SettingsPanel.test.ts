@@ -45,7 +45,7 @@ describe('SettingsPanel', () => {
   it('stays open while choosing, and closes on a click outside', async () => {
     render(SettingsPanel, { settings: DEFAULTS, onchange: () => {} });
     await open();
-    await fireEvent.click(screen.getByRole('radio', { name: 'Fixed' }));
+    await fireEvent.click(screen.getByRole('radio', { name: 'Fixed width' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await fireEvent.click(document.body);
     expect(screen.queryByRole('dialog')).toBeNull();
