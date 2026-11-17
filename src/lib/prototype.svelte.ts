@@ -6,6 +6,7 @@ export const VARIANTS = {
   b: { name: 'Row stays lit', hint: 'The whole row stays lit; the dots brighten' },
   c: { name: 'Smaller grip box', hint: 'A rounded box over the icon only, with a gap before the title' },
   d: { name: 'Both', hint: 'Row stays lit, plus a brighter rounded box around the dots' },
+  e: { name: 'No grip', hint: 'Drag from anywhere on the bookmark; a click still opens it' },
 } as const;
 
 export type Variant = keyof typeof VARIANTS;

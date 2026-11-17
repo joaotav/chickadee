@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { proto } from '@/lib/prototype.svelte';
   import { defaultTitle, toWebUrl, type Link } from '@/lib/tree';
   import Grip from './Grip.svelte';
   import InlineInput from './InlineInput.svelte';
@@ -24,6 +25,16 @@
     onupdate?.({ url });
     editing = null;
   }
+
+  // PROTOTYPE (#72), variant E: pressing anywhere on the link drags it, as on a category header.
+  let row: HTMLElement;
+  function dragFromRow(event: MouseEvent) {
+    const grip = row.querySelector('.grip');
+    const onLink = (event.target as Element).closest('.link');
+    if (proto.variant !== 'e' || !grip || !onLink || event.button !== 0) return;
+    event.preventDefault();
+    grip.dispatchEvent(new MouseEvent('mousedown', event));
+  }
 </script>
 
 {#snippet content()}
@@ -35,7 +46,7 @@
   </span>
 {/snippet}
 
-<div class="row">
+<div class="row" bind:this={row} onmousedown={dragFromRow} role="presentation">
   {#if editing === 'title'}
     <!-- An empty title goes back to the default, the same as adding a link without one. -->
     <InlineInput
@@ -181,6 +192,23 @@
   }
   :global(:root:is([data-proto-grip='c'], [data-proto-grip='d'])) .row > :global(.grip:hover) {
     background: color-mix(in srgb, var(--fg) 10%, var(--row-hover));
+  }
+  /* E: the grip is only for the keyboard, an outline around the row when tabbed to. */
+  :global(:root[data-proto-grip='e']) .row > :global(.grip) {
+    inset: 0;
+    width: auto;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  :global(:root[data-proto-grip='e']) .row > :global(.grip:focus-visible) {
+    opacity: 1;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    background: none;
+  }
+  :global(:root[data-proto-grip='e']) .row > :global(.grip svg) {
+    visibility: hidden;
   }
   /* Level with the icon in taller rows, now that the box starts 4px lower. */
   :global(:root:is([data-titles='two-lines'], [data-titles='with-url']):is([data-proto-grip='c'], [data-proto-grip='d'])) .row > :global(.grip) {
