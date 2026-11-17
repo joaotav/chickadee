@@ -78,21 +78,26 @@ At a release, the Unreleased entries move under the new version number.
 
 Releases are tagged on `main` and published as GitHub releases with both browsers' builds attached.
 
-1. In a pull request, set the version in `package.json` and move the CHANGELOG's Unreleased entries under it. Merge it.
-2. On an up-to-date `main`, sign the Firefox build. It needs an API key and secret from [addons.mozilla.org](https://addons.mozilla.org/developers/addon/api/key/), which stay out of the repo:
+1. In a pull request, set the version with `npm version <version> --no-git-tag-version`, which updates `package.json` and `package-lock.json`, and move the CHANGELOG's Unreleased entries under a `## <version> - <date>` heading, leaving an empty Unreleased above it. Merge it.
+2. On an up-to-date `main`, sign the Firefox build. It needs the JWT issuer (the API key) and JWT secret from [addons.mozilla.org](https://addons.mozilla.org/developers/addon/api/key/), which stay out of the repo. `read -rs` takes each one without showing it or saving it in the shell's history. Paste the key, press Enter, then do the same for the secret:
 
    ```sh
-   export WEB_EXT_API_KEY=... WEB_EXT_API_SECRET=...
+   git switch main && git pull
+   read -rs WEB_EXT_API_KEY && read -rs WEB_EXT_API_SECRET && export WEB_EXT_API_KEY WEB_EXT_API_SECRET
    npm run sign:firefox     # the signed .xpi lands in .output/signed/
    ```
 
    Mozilla signs an unlisted add-on automatically, usually within minutes. The upload includes the source zip, since the build is minified. AMO refuses a version it has already signed, so every upload needs a new version.
 3. Build the Chrome zip with `npm run zip`. The manifest's `key` keeps the extension ID the same on every computer.
-4. Tag the release and attach both files:
+4. Tag the release and attach both files. `.output/signed/` keeps the `.xpi` of earlier versions too, so the commands pick this version's by name and give it the same name pattern as the Chrome zip. The release notes are the version's CHANGELOG entries, after a line on what the release is about and how to install it, written to a file outside the repo:
 
    ```sh
-   git tag -s v0.1.0 -m v0.1.0 && git push origin v0.1.0
-   gh release create v0.1.0 .output/signed/*.xpi .output/*-chrome.zip --title v0.1.0 --notes "..."
+   V=$(node -p "require('./package.json').version")
+   cp .output/signed/*-$V.xpi .output/chickadee-$V-firefox.xpi
+   git tag -s v$V -m v$V && git push origin v$V
+   gh release create v$V .output/chickadee-$V-firefox.xpi .output/chickadee-$V-chrome.zip --title "Chickadee $V" --notes-file /tmp/notes-$V.md
    ```
+
+5. Close the version's milestone, and open one for the next release with its issues.
 
 The extension icon is drawn in `src/assets/icon.svg`. After changing it, run `node scripts/render-icons.mjs` to update the PNG sizes in `public/icon/`.
