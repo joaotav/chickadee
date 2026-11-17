@@ -165,4 +165,25 @@
   :global(:root[data-titles='with-url']) .url {
     display: block;
   }
+
+  /* PROTOTYPE (#72): the variants, picked by the switcher at the bottom of the page. */
+  /* B and D: the row stays lit while the pointer is anywhere on it, grip included. */
+  :global(:root:is([data-proto-grip='b'], [data-proto-grip='d'])) .row:hover > a.link {
+    background: var(--row-hover);
+  }
+  /* C and D: a rounded box over the icon only, leaving a gap before the title. */
+  :global(:root:is([data-proto-grip='c'], [data-proto-grip='d'])) .row > :global(.grip) {
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: 24px;
+    border-radius: 4px;
+  }
+  :global(:root:is([data-proto-grip='c'], [data-proto-grip='d'])) .row > :global(.grip:hover) {
+    background: color-mix(in srgb, var(--fg) 10%, var(--row-hover));
+  }
+  /* Level with the icon in taller rows, now that the box starts 4px lower. */
+  :global(:root:is([data-titles='two-lines'], [data-titles='with-url']):is([data-proto-grip='c'], [data-proto-grip='d'])) .row > :global(.grip) {
+    padding-top: 3px;
+  }
 </style>

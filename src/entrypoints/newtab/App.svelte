@@ -5,6 +5,7 @@
   import CategoryCard from '@/components/CategoryCard.svelte';
   import DeleteSpace from '@/components/DeleteSpace.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
+  import PrototypeSwitcher from '@/components/PrototypeSwitcher.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
   import SpaceForm from '@/components/SpaceForm.svelte';
@@ -319,6 +320,11 @@
     </div>
   {/if}
 </main>
+
+<!-- PROTOTYPE, only in development builds. -->
+{#if import.meta.env.DEV}
+  <PrototypeSwitcher />
+{/if}
 
 {#if toast}
   <!-- Keyed, so a new delete restarts the countdown. -->
