@@ -4,6 +4,10 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ## Unreleased
 
+### Improvements
+
+- **The card sizing option "Fixed" is now "Fixed width",** to say what stays the same
+
 ## 0.2.0 - 2026-11-17
 
 ### Improvements

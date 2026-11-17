@@ -73,7 +73,7 @@ A settings panel lets the user change how the page looks. The MVP ships the Grid
 | Theme | Tokyo Night, Rosé Pine, Dracula, Neutral dark, Rosé Pine Dawn (light) |
 | Density | Comfortable, Compact |
 | Titles | One line, up to two lines, title + URL |
-| Card sizing | Fixed: cards share a column width. Fit content: each card is as wide as its longest link, between the card width and twice that. Masonry always uses fixed. |
+| Card sizing | Fixed width: cards share a column width. Fit content: each card is as wide as its longest link, between the card width and twice that. Masonry always uses fixed width. |
 
 The card width is one value, 260px to start, tuned once the real page exists. There is no setting for it and no way to widen a single card. Long titles are handled by fit content, or by the two-line title option in fixed mode.
 
