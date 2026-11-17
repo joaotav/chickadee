@@ -29,10 +29,10 @@ const expectLinks = (page: Page, card: string, titles: string[]) =>
     titles.map((title) => new RegExp(`^\\s*${title}`)),
   );
 
-/** Presses a grip and moves the pointer in small steps to a point on `target`, then lets go. */
-async function drag(page: Page, grip: Locator, target: Locator, { y = 0.5 } = {}) {
-  await grip.hover();
-  const from = (await grip.boundingBox())!;
+/** Presses `handle` and moves the pointer in small steps to a point on `target`, then lets go. */
+async function drag(page: Page, handle: Locator, target: Locator, { y = 0.5 } = {}) {
+  await handle.hover();
+  const from = (await handle.boundingBox())!;
   const to = (await target.boundingBox())!;
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
@@ -46,6 +46,8 @@ async function drag(page: Page, grip: Locator, target: Locator, { y = 0.5 } = {}
 }
 
 const row = (page: Page, name: string) => page.getByRole('listitem', { name });
+/** A link, which the pointer drags it by. Its grip is only for the keyboard. */
+const link = (page: Page, name: string) => page.getByRole('link', { name: new RegExp(`^${name}`) });
 const grip = (page: Page, name: string) => page.getByRole('button', { name: `Move ${name}` });
 /** A category's header, which the pointer drags it by. Its grip is only for the keyboard. */
 const header = (page: Page, name: string) => page.getByRole('button', { name: new RegExp(`^${name}`) });
@@ -53,15 +55,15 @@ const header = (page: Page, name: string) => page.getByRole('button', { name: ne
 test('moves a link down and up within its category, then into another one', async ({ dashboard }) => {
   const ids = await addBookmarks(dashboard, sample);
 
-  await drag(dashboard, grip(dashboard, 'GitHub'), row(dashboard, 'Codeberg'));
+  await drag(dashboard, link(dashboard, 'GitHub'), row(dashboard, 'Codeberg'));
   await expectLinks(dashboard, 'Repos', ['GitLab', 'Codeberg', 'GitHub']);
   await expect.poll(() => childTitles(dashboard, ids['Repos']!)).toEqual(['GitLab', 'Codeberg', 'GitHub']);
 
-  await drag(dashboard, grip(dashboard, 'GitHub'), row(dashboard, 'GitLab'));
+  await drag(dashboard, link(dashboard, 'GitHub'), row(dashboard, 'GitLab'));
   await expectLinks(dashboard, 'Repos', ['GitHub', 'GitLab', 'Codeberg']);
   await expect.poll(() => childTitles(dashboard, ids['Repos']!)).toEqual(['GitHub', 'GitLab', 'Codeberg']);
 
-  await drag(dashboard, grip(dashboard, 'GitLab'), row(dashboard, 'MDN'), { y: 0.25 });
+  await drag(dashboard, link(dashboard, 'GitLab'), row(dashboard, 'MDN'), { y: 0.25 });
   await expectLinks(dashboard, 'Repos', ['GitHub', 'Codeberg']);
   await expectLinks(dashboard, 'Docs', ['GitLab', 'MDN']);
   await expect.poll(() => childTitles(dashboard, ids['Docs']!)).toEqual(['GitLab', 'MDN']);
@@ -69,11 +71,23 @@ test('moves a link down and up within its category, then into another one', asyn
 
 test('drops a link into an empty category', async ({ dashboard }) => {
   const ids = await addBookmarks(dashboard, sample);
-  await drag(dashboard, grip(dashboard, 'MDN'), dashboard.getByRole('list', { name: 'Links in Empty' }));
+  await drag(dashboard, link(dashboard, 'MDN'), dashboard.getByRole('list', { name: 'Links in Empty' }));
   await expectLinks(dashboard, 'Empty', ['MDN']);
   await expect(dashboard.getByText('No links yet')).toBeVisible();
   await expect.poll(() => childTitles(dashboard, ids['Empty']!)).toEqual(['MDN']);
   expect(await childTitles(dashboard, ids['Docs']!)).toEqual([]);
+});
+
+test('a click still opens a link, and its ⋯ button opens the menu instead of dragging', async ({ context, dashboard }) => {
+  await context.route(/^https?:/, (route) => route.fulfill({ body: 'ok', contentType: 'text/plain' }));
+  await addBookmarks(dashboard, sample);
+  await link(dashboard, 'GitHub').hover();
+  await dashboard.getByRole('button', { name: 'Actions for GitHub' }).click();
+  await expect(dashboard.getByRole('button', { name: 'Rename' })).toBeVisible();
+  await dashboard.keyboard.press('Escape');
+
+  await link(dashboard, 'GitLab').click();
+  await expect(dashboard).toHaveURL('https://gitlab.com/');
 });
 
 test('moves a link with the keyboard', async ({ dashboard }) => {

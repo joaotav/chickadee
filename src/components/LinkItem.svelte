@@ -24,6 +24,17 @@
     onupdate?.({ url });
     editing = null;
   }
+
+  let row: HTMLElement;
+
+  // Pressing the link drags it, as pressing its grip would. The drag only starts once the
+  // pointer moves a few pixels, so a click still opens the link.
+  function dragFromLink(event: MouseEvent) {
+    const grip = row.querySelector('.grip');
+    if (!grip || event.button !== 0) return;
+    event.preventDefault();
+    grip.dispatchEvent(new MouseEvent('mousedown', event));
+  }
 </script>
 
 {#snippet content()}
@@ -35,7 +46,7 @@
   </span>
 {/snippet}
 
-<div class="row">
+<div class="row" bind:this={row}>
   {#if editing === 'title'}
     <!-- An empty title goes back to the default, the same as adding a link without one. -->
     <InlineInput
@@ -52,14 +63,18 @@
   {:else if editing === 'url'}
     <InlineInput value={link.url} label="URL" onsave={saveUrl} oncancel={() => (editing = null)} />
   {:else if link.openable}
-    <a class="link" href={link.url} title={`${link.title}\n${link.url}`}>{@render content()}</a>
+    <a class="link" href={link.url} title={`${link.title}\n${link.url}`} onmousedown={dragFromLink}>{@render content()}</a>
   {:else}
-    <span class="link disabled" title={`${link.title}\n${link.url}\nOnly web links can be opened from this page.`}>
+    <span
+      class="link disabled"
+      title={`${link.title}\n${link.url}\nOnly web links can be opened from this page.`}
+      role="presentation"
+      onmousedown={dragFromLink}
+    >
       {@render content()}
     </span>
   {/if}
   {#if !editing}
-    <!-- Over the icon, so the rest of the link can still be dragged out to the toolbar or another window. -->
     <Grip label="Move {link.title}" />
   {/if}
   {#if onupdate && !editing}
@@ -85,19 +100,27 @@
     position: absolute;
     right: 6px;
   }
-  .row:not(:hover, :focus-within) > :global(:is(.menu:not(.open), .grip)) {
+  .row:not(:hover, :focus-within) > :global(.menu:not(.open)) {
     opacity: 0;
   }
-  /* Covers the icon and the space before the title, the whole height of the row. */
+  /* The pointer drags the link itself, so the grip is only for the keyboard: it ignores the
+     pointer and shows as an outline around the row when tabbed to. */
   .row > :global(.grip) {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 32px;
+    inset: 0;
+    width: auto;
     height: auto;
-    border-radius: 6px 0 0 6px;
-    background: var(--row-hover);
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .row > :global(.grip:focus-visible) {
+    opacity: 1;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .row > :global(.grip svg) {
+    visibility: hidden;
   }
   .row > :global(.menu:not(.open) .toggle:not(:hover)) {
     background: var(--row-hover);
@@ -148,11 +171,6 @@
   }
   :global(:root:is([data-titles='two-lines'], [data-titles='with-url'])) .link > :global(.icon) {
     margin-top: 1px;
-  }
-  /* Level with the icon, which sits at the top of rows taller than one line. */
-  :global(:root:is([data-titles='two-lines'], [data-titles='with-url'])) .row > :global(.grip) {
-    align-items: start;
-    padding-top: 7px;
   }
   :global(:root[data-titles='two-lines']) .title {
     display: -webkit-box;
