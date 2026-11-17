@@ -56,7 +56,7 @@ Dependabot's pull requests are the exception: they have no issue and no changelo
 |---|---|
 | `npm test` | Unit and component tests (Vitest) |
 | `npm run test:e2e` | Builds the Chrome extension and runs the end-to-end tests (Playwright) |
-| `npm run check` | Type check, unit and component tests, `npm audit`, Firefox build and `web-ext lint` |
+| `npm run check` | Type check, unit and component tests, `npm audit` (failing on high advisories, except those listed in `scripts/audit.mjs`), Firefox build and `web-ext lint` |
 
 CI runs `npm run check` and `npm run test:e2e` on every pull request. Firefox can't be tested under automation, so check changes to the extension by hand with `npm run dev:firefox`. [docs/mvp-plan.md](docs/mvp-plan.md#testing) explains the test layers.
 
