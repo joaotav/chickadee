@@ -11,6 +11,9 @@
   --accent: #8b9cf7;
   --border: #33343c;
   --danger: #f87171;
+  /* Behind the text of filled buttons, like Save and Delete. */
+  --accent-fill: var(--accent);
+  --danger-fill: var(--danger);
 
   --card-width: 260px;
   --row-height: 34px;
@@ -71,6 +74,9 @@
   --accent: #907aa9;
   --border: #dfdad9;
   --danger: #b4637a;
+  /* Darker shades of iris and love, so the light text on filled buttons is easy to read. */
+  --accent-fill: #6f5888;
+  --danger-fill: #98495f;
 
   color-scheme: light;
 }

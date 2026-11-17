@@ -15,6 +15,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - Deleting a space that holds categories or bookmarks asks first, saying how many of each will go, as in "Delete space “Work” and its 3 categories (24 bookmarks)?". **Cancel**, Escape or a click elsewhere keeps it. An empty space is still deleted straight away, and **Undo** still follows ([#50](https://github.com/joaotav/chickadee/issues/50))
 - With more spaces than fit in the top bar, the bar shows the tabs that fit and lists the rest under **N more ▾**, instead of making the page wider. The selected space always has its tab, so a space picked from the list shows up in the bar. To keep a space in view, drag its tab nearer the start. Long space names are cut short with "…", and hovering over one shows it whole ([#55](https://github.com/joaotav/chickadee/issues/55))
 - The search results end with a line showing their keys: the arrow keys select a result, Enter opens it, and Ctrl+Enter or Ctrl+click opens it in a new tab in the background, keeping the search open. A Mac shows ⌘ instead of Ctrl ([#31](https://github.com/joaotav/chickadee/issues/31))
+- In the Rosé Pine Dawn theme, filled buttons like **Save**, **Add** and **Delete** use deeper shades of the theme's purple and red, so their text is easier to read ([#60](https://github.com/joaotav/chickadee/issues/60))
 
 ## 0.1.0 - 2026-11-08
 

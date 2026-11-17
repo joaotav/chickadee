@@ -140,12 +140,12 @@
     color: var(--fg);
   }
   .buttons .primary {
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--bg);
     font-weight: 600;
   }
   .buttons .primary:hover {
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--bg);
     filter: brightness(1.1);
   }

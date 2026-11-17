@@ -323,12 +323,12 @@
     color: var(--fg);
   }
   .confirm .primary {
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--bg);
     font-weight: 600;
   }
   .confirm .primary:hover {
-    background: var(--accent);
+    background: var(--accent-fill);
     color: var(--bg);
     filter: brightness(1.1);
   }

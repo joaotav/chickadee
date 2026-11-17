@@ -82,12 +82,12 @@
     color: var(--fg);
   }
   .danger {
-    background: var(--danger);
+    background: var(--danger-fill);
     color: var(--bg);
     font-weight: 600;
   }
   .danger:hover {
-    background: var(--danger);
+    background: var(--danger-fill);
     color: var(--bg);
     filter: brightness(1.1);
   }
