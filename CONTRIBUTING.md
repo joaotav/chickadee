@@ -66,19 +66,19 @@ For checking by hand, development builds add two buttons to the settings panel. 
 
 [CHANGELOG.md](CHANGELOG.md) tells users how the extension changed. It is not a list of merged pull requests; the commit history already is one. Write entries for users, not developers, and leave out changes they won't notice, like CI, tests or refactoring.
 
-New entries go under **Unreleased**, in one of these sections: Breaking changes, Features, Improvements, Bug fixes. If a change takes several pull requests, give it one entry describing the net effect. Link the issue:
+New entries go under **Unreleased**, in one of these sections: Breaking changes, Features, Improvements, Bug fixes. If a change takes several pull requests, give it one entry describing the net effect. Start the entry with a short bold line saying what changed, add a sentence or two of detail at most, and link the issue. How a feature works belongs in the README, not here.
 
 ```md
-- Choose a theme, density and title style in the new settings panel ([#7](https://github.com/joaotav/chickadee/issues/7))
+- **The top bar fits any number of spaces.** Tabs that don't fit are listed under **N more ▾** instead of widening the page ([#55](https://github.com/joaotav/chickadee/issues/55))
 ```
 
-At a release, the Unreleased entries move under the new version number.
+At a release, the Unreleased entries move under the new version number, with the biggest changes first in each section, and a line under the version heading sums up the release. Versions up to 0.2.0 were written before this style.
 
 ## Releasing
 
 Releases are tagged on `main` and published as GitHub releases with both browsers' builds attached.
 
-1. In a pull request, set the version with `npm version <version> --no-git-tag-version`, which updates `package.json` and `package-lock.json`, and move the CHANGELOG's Unreleased entries under a `## <version> - <date>` heading, leaving an empty Unreleased above it. Merge it.
+1. In a pull request, set the version with `npm version <version> --no-git-tag-version`, which updates `package.json` and `package-lock.json`, and move the CHANGELOG's Unreleased entries under a `## <version> - <date>` heading with a line summing up the release, leaving an empty Unreleased above it. Merge it.
 2. On an up-to-date `main`, sign the Firefox build. It needs the JWT issuer (the API key) and JWT secret from [addons.mozilla.org](https://addons.mozilla.org/developers/addon/api/key/), which stay out of the repo. `read -rs` takes each one without showing it or saving it in the shell's history. Paste the key, press Enter, then do the same for the secret:
 
    ```sh
@@ -89,7 +89,7 @@ Releases are tagged on `main` and published as GitHub releases with both browser
 
    Mozilla signs an unlisted add-on automatically, usually within minutes. The upload includes the source zip, since the build is minified. AMO refuses a version it has already signed, so every upload needs a new version.
 3. Build the Chrome zip with `npm run zip`. The manifest's `key` keeps the extension ID the same on every computer.
-4. Tag the release and attach both files. `.output/signed/` keeps the `.xpi` of earlier versions too, so the commands pick this version's by name and give it the same name pattern as the Chrome zip. The release notes are the version's CHANGELOG entries, after a line on what the release is about and how to install it, written to a file outside the repo:
+4. Tag the release and attach both files. `.output/signed/` keeps the `.xpi` of earlier versions too, so the commands pick this version's by name and give it the same name pattern as the Chrome zip. The release notes are the version's CHANGELOG section, with how to install it added after the summary line, written to a file outside the repo:
 
    ```sh
    V=$(node -p "require('./package.json').version")
