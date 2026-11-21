@@ -1,38 +1,48 @@
 <script lang="ts">
-  import { createSearch, type Result } from '@/lib/search';
+  import { proto } from '@/lib/prototype.svelte';
+  import { createPrototypeSearch, type Item, type Result } from '@/lib/search';
   import type { Space } from '@/lib/tree';
   import LinkIcon from './LinkIcon.svelte';
 
   let {
     spaces,
     onopen,
+    onplace,
   }: {
     spaces: Space[];
     /** Opens a result here, or in a background tab, which keeps the search open. */
     onopen: (url: string, background: boolean) => void;
+    /** PROTOTYPE: goes to a space, or to a category's card. */
+    onplace: (spaceId: string, categoryId?: string) => void;
   } = $props();
 
   let input: HTMLInputElement;
-  let list = $state<HTMLElement>();
   let query = $state('');
   let focused = $state(false);
   let selected = $state(0);
 
-  const search = $derived(createSearch(spaces));
+  const search = $derived(createPrototypeSearch(spaces, proto.variant));
   const results = $derived(search(query));
   const open = $derived(focused && query.trim() !== '');
 
   // Macs use Cmd where other systems use Ctrl.
   const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl';
 
-  function choose(result: Result, background: boolean) {
-    onopen(result.link.url, background);
+  // Grouped variants list the places first, under a heading of their own.
+  const grouped = $derived(proto.variant === 'c' || proto.variant === 'd');
+  const placeCount = $derived(results.filter((item) => item.kind !== 'link').length);
+
+  function choose(item: Item, background: boolean) {
+    if (item.kind === 'link') return onopen(item.link.url, background);
+    onplace(item.spaceId, item.categoryId);
+    query = '';
+    input.blur();
   }
 
   function move(by: number) {
     if (results.length === 0) return;
     selected = (selected + by + results.length) % results.length;
-    list?.children[selected]?.scrollIntoView({ block: 'nearest' });
+    document.getElementById(`search-result-${selected}`)?.scrollIntoView({ block: 'nearest' });
   }
 
   function onkeydown(event: KeyboardEvent) {
@@ -89,37 +99,61 @@
   {#if open}
     <div class="dropdown">
       {#if results.length > 0}
-        <ul id="search-results" role="listbox" aria-label="Search results" bind:this={list}>
-          {#each results as result, i (result.link.id)}
+        <ul id="search-results" role="listbox" aria-label="Search results">
+          {#each results as item, i (item.kind === 'link' ? item.link.id : (item.categoryId ?? item.spaceId))}
+            {#if grouped && i === 0 && placeCount > 0}
+              <li class="group" role="presentation">Spaces and categories</li>
+            {/if}
+            {#if grouped && i === placeCount && item.kind === 'link'}
+              <li class="group" role="presentation">Bookmarks</li>
+            {/if}
             <!-- The search box keeps focus and handles the keyboard, as in any combobox. A
                  mousedown would take the focus away, closing the list before the click. -->
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <li
               id="search-result-{i}"
-              title={result.link.url}
+              title={item.kind === 'link' ? item.link.url : undefined}
               role="option"
               aria-selected={i === selected}
               onmousedown={(event) => event.preventDefault()}
               onmousemove={() => (selected = i)}
-              onclick={(event) => choose(result, event.ctrlKey || event.metaKey)}
-              onauxclick={(event) => event.button === 1 && choose(result, true)}
+              onclick={(event) => choose(item, event.ctrlKey || event.metaKey)}
+              onauxclick={(event) => event.button === 1 && item.kind === 'link' && choose(item, true)}
             >
-              <LinkIcon link={result.link} />
-              <span class="text">
-                <span class="title">{@render highlighted(result.title)}</span>
-                <span class="where">{result.place} · {@render highlighted(result.address)}</span>
-              </span>
+              {#if item.kind === 'link'}
+                <LinkIcon link={item.link} />
+                <span class="text">
+                  <span class="title">{@render highlighted(item.title)}</span>
+                  <span class="where">
+                    {#if item.placeParts}{@render highlighted(item.placeParts)}{:else}{item.place}{/if}
+                    · {@render highlighted(item.address)}
+                  </span>
+                </span>
+              {:else}
+                {#if item.kind === 'space'}
+                  <span class="place-icon">{item.emoji ?? '▦'}</span>
+                {:else}
+                  <svg class="place-icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="2" /><path d="M2.5 6h11" /></svg>
+                {/if}
+                <span class="text">
+                  <span class="title">{@render highlighted(item.name)}</span>
+                  <span class="where">
+                    {#if item.kind === 'space'}Space · {item.count} bookmarks{:else}Category in {item.within} · {item.count} bookmarks{/if}
+                  </span>
+                </span>
+                <span class="go">Go to</span>
+              {/if}
             </li>
           {/each}
         </ul>
         <!-- Hidden from screen readers, which announce the results as a list to pick from. -->
         <p class="keys" aria-hidden="true">
           <span><kbd>↑↓</kbd> Select</span>
-          <span><kbd>↵</kbd> Open</span>
+          <span><kbd>↵</kbd> {results[selected]?.kind === 'link' || !results[selected] ? 'Open' : 'Go to'}</span>
           <span><kbd>{mod} ↵</kbd> or <kbd>{mod}</kbd>+<kbd>Click</kbd> Open in new tab</span>
         </p>
       {:else}
-        <p class="none">No links match</p>
+        <p class="none">Nothing matches</p>
       {/if}
     </div>
   {/if}
@@ -239,6 +273,42 @@
     font: inherit;
     line-height: 15px;
     text-align: center;
+  }
+  .group {
+    padding: 8px 8px 4px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: default;
+  }
+  .group:not(:first-child) {
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+  }
+  .place-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    font-size: 14px;
+    line-height: 16px;
+    text-align: center;
+  }
+  svg.place-icon {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.4;
+  }
+  .go {
+    margin-left: auto;
+    align-self: center;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
   }
   .none {
     margin: 0;

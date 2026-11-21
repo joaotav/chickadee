@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { dragHandleZone, setKeyboardDragTrigger, type DndEvent } from 'svelte-dnd-action';
   import { flip } from 'svelte/animate';
   import CategoryCard from '@/components/CategoryCard.svelte';
   import DeleteSpace from '@/components/DeleteSpace.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
+  import PrototypeSwitcher from '@/components/PrototypeSwitcher.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
   import SpaceForm from '@/components/SpaceForm.svelte';
@@ -168,6 +169,20 @@
     saveCollapsed(collapsed.includes(id) ? collapsed.filter((other) => other !== id) : [...collapsed, id]);
   }
 
+  // PROTOTYPE (#43): a space or category picked in the search. A category's card expands if
+  // collapsed, scrolls into view and is highlighted for a moment.
+  let flashId = $state<string | null>(null);
+  async function goTo(spaceId: string, categoryId?: string) {
+    select(spaceId);
+    if (!categoryId) return window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (collapsed.includes(categoryId)) toggle(categoryId);
+    flashId = null;
+    await tick();
+    document.querySelector(`[data-card="${categoryId}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    flashId = categoryId;
+    setTimeout(() => flashId === categoryId && (flashId = null), 2000);
+  }
+
   function saveSettings(next: Settings) {
     settings = next;
     void setSettings(next);
@@ -246,7 +261,11 @@
       </div>
     {/if}
     {#if spaces && spaces.length > 0}
-      <SearchBox {spaces} onopen={(url, background) => (background ? void openInBackground([url]) : location.assign(url))} />
+      <SearchBox
+        {spaces}
+        onopen={(url, background) => (background ? void openInBackground([url]) : location.assign(url))}
+        onplace={goTo}
+      />
     {/if}
     <SettingsPanel {settings} onchange={saveSettings} />
   </div>
@@ -281,7 +300,7 @@
       onfinalize={dropCard}
     >
       {#each cards as card (card.id)}
-        <div class="slot" aria-label={card.category?.title ?? (card.id === NEW_CATEGORY ? 'New category' : UNSORTED)} animate:flip={{ duration: FLIP_MS }}>
+        <div class="slot" class:flash={card.id === flashId} data-card={card.id} aria-label={card.category?.title ?? (card.id === NEW_CATEGORY ? 'New category' : UNSORTED)} animate:flip={{ duration: FLIP_MS }}>
           {#if card.category}
             {@const category = card.category}
             <CategoryCard
@@ -319,6 +338,11 @@
     </div>
   {/if}
 </main>
+
+<!-- PROTOTYPE, only in development builds. -->
+{#if import.meta.env.DEV}
+  <PrototypeSwitcher />
+{/if}
 
 {#if toast}
   <!-- Keyed, so a new delete restarts the countdown. -->
@@ -414,6 +438,18 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
     align-items: start;
+  }
+  .slot.flash :global(.card) {
+    animation: flash 2s ease-out;
+  }
+  @keyframes flash {
+    0%,
+    40% {
+      box-shadow: 0 0 0 3px var(--accent);
+    }
+    100% {
+      box-shadow: 0 0 0 3px transparent;
+    }
   }
   .notice {
     max-width: 520px;

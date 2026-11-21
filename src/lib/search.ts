@@ -99,3 +99,115 @@ export function createSearch(spaces: Space[], limit = 10): (query: string) => Re
     });
   };
 }
+
+// PROTOTYPE for searching space and category names (#43). Throwaway: it lives only on the
+// prototype/search-places branch.
+
+/** A space or category whose name matches. */
+export interface PlaceResult {
+  kind: 'space' | 'category';
+  spaceId: string;
+  categoryId?: string;
+  emoji: string | null;
+  name: Part[];
+  /** For a category, the space it's in. */
+  within?: string;
+  count: number;
+}
+
+export type Item = ({ kind: 'link'; placeParts?: Part[] } & Result) | PlaceResult;
+
+type Found = { index: number; ranges: number[] };
+
+function run(haystack: string[], needle: string): Found[] {
+  const [idxs, info, order] = fuzzy.search(haystack, needle, 5);
+  return info && order
+    ? order.map((i) => ({ index: info.idx[i]!, ranges: info.ranges[i]! }))
+    : (idxs ?? []).map((index) => ({ index, ranges: [] }));
+}
+
+export function createPrototypeSearch(
+  spaces: Space[],
+  variant: 'a' | 'b' | 'c' | 'd',
+  limit = 10,
+): (query: string) => Item[] {
+  const links = spaces.flatMap((space) => [
+    ...space.unsorted.filter((link) => link.openable).map((link) => ({ link, place: placeName(space) })),
+    ...space.categories.flatMap((category) =>
+      category.links.filter((link) => link.openable).map((link) => ({ link, place: placeName(space, category) })),
+    ),
+  ]);
+  const hosts = links.map(({ link }) => hostOf(link.url));
+  const linkHaystack = uFuzzy.latinize(links.map(({ link }, i) => `${link.title} ${hosts[i]}`));
+  const placeOfLinkHaystack = uFuzzy.latinize(links.map(({ place }) => place));
+
+  const places = spaces.flatMap((space) => [
+    {
+      kind: 'space' as const,
+      spaceId: space.id,
+      emoji: space.emoji,
+      text: space.name,
+      count: space.unsorted.length + space.categories.reduce((sum, category) => sum + category.links.length, 0),
+    },
+    ...space.categories.map((category) => ({
+      kind: 'category' as const,
+      spaceId: space.id,
+      categoryId: category.id,
+      emoji: space.emoji,
+      text: category.title,
+      within: space.name,
+      count: category.links.length,
+    })),
+  ]);
+  const placeHaystack = uFuzzy.latinize(places.map(({ text }) => text));
+
+  const toLink = ({ index, ranges }: Found): Item => {
+    const { link, place } = links[index]!;
+    const host = split(hosts[index]!, ranges, link.title.length + 1);
+    const rest = afterHost(link.url, hosts[index]!);
+    return { kind: 'link', link, place, title: split(link.title, ranges, 0), address: rest ? [...host, { text: rest, match: false }] : host };
+  };
+  // A link found by the name of its space or category, with that name highlighted instead.
+  const toLinkByPlace = ({ index, ranges }: Found): Item => {
+    const { link, place } = links[index]!;
+    const rest = afterHost(link.url, hosts[index]!);
+    const address = [{ text: hosts[index]! + rest, match: false }];
+    return { kind: 'link', link, place, placeParts: split(place, ranges, 0), title: [{ text: link.title, match: false }], address };
+  };
+  const toPlace = ({ index, ranges }: Found): PlaceResult => {
+    const { text, ...place } = places[index]!;
+    return { ...place, name: split(text, ranges, 0) };
+  };
+
+  // Links whose title or site matches, then links in a matching space or category.
+  const linksAndInside = (needle: string) => {
+    const byTitle = run(linkHaystack, needle);
+    const seen = new Set(byTitle.map(({ index }) => index));
+    const byPlace = run(placeOfLinkHaystack, needle).filter(({ index }) => !seen.has(index));
+    return [...byTitle.map(toLink), ...byPlace.map(toLinkByPlace)].slice(0, limit);
+  };
+
+  return (query) => {
+    const needle = uFuzzy.latinize(query.trim());
+    if (!needle) return [];
+    switch (variant) {
+      case 'a':
+        return linksAndInside(needle);
+      case 'b': {
+        // One list, so uFuzzy ranks places and links against each other.
+        const all = run([...placeHaystack, ...linkHaystack], needle);
+        return all
+          .slice(0, limit)
+          .map((found) =>
+            found.index < places.length
+              ? toPlace(found)
+              : toLink({ index: found.index - places.length, ranges: found.ranges }),
+          );
+      }
+      case 'c':
+        return [...run(placeHaystack, needle).slice(0, 3).map(toPlace), ...run(linkHaystack, needle).slice(0, limit).map(toLink)];
+      case 'd':
+        return [...run(placeHaystack, needle).slice(0, 3).map(toPlace), ...linksAndInside(needle)];
+    }
+  };
+}
