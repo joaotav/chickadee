@@ -95,4 +95,9 @@ describe('createSearch', () => {
   it('stops at the limit', () => {
     expect(createSearch(spaces, 2)('o')).toHaveLength(2);
   });
+
+  it('gives up to 50 results by default', () => {
+    const links = Array.from({ length: 60 }, (_, i) => link(`l${i}`, `Doc ${i}`, `https://example.com/${i}`));
+    expect(createSearch([{ id: 's', name: 'Work', emoji: null, unsorted: links, categories: [] }])('doc')).toHaveLength(50);
+  });
 });

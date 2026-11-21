@@ -22,6 +22,14 @@
   const results = $derived(search(query));
   const open = $derived(focused && query.trim() !== '');
 
+  // The list is 10 results tall, or less if the window is too short, and scrolls for the
+  // rest. Every result takes two lines, so they're all as tall as the first.
+  let rowHeight = $state(0);
+  $effect(() => {
+    void results;
+    rowHeight = list?.firstElementChild?.getBoundingClientRect().height ?? 0;
+  });
+
   // Macs use Cmd where other systems use Ctrl.
   const mod = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl';
 
@@ -89,7 +97,13 @@
   {#if open}
     <div class="dropdown">
       {#if results.length > 0}
-        <ul id="search-results" role="listbox" aria-label="Search results" bind:this={list}>
+        <ul
+          id="search-results"
+          role="listbox"
+          aria-label="Search results"
+          bind:this={list}
+          style:--ten-rows={rowHeight ? `${10 * rowHeight}px` : undefined}
+        >
           {#each results as result, i (result.link.id)}
             <!-- The search box keeps focus and handles the keyboard, as in any combobox. A
                  mousedown would take the focus away, closing the list before the click. -->
@@ -172,8 +186,9 @@
     background: var(--card);
     box-shadow: 0 12px 32px #0006;
   }
+  /* The 120px leave room for the top bar and the keys under the list. */
   ul {
-    max-height: 60vh;
+    max-height: min(var(--ten-rows, 100vh), 100vh - 120px);
     margin: 0;
     padding: 0;
     overflow-y: auto;

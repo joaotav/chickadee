@@ -8,6 +8,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 - **Drag a bookmark from anywhere on it,** as with categories, instead of by a grip over its icon. A click still opens it. With the keyboard, Tab to a bookmark's grip, now shown as an outline around it, and Space picks it up as before ([#72](https://github.com/joaotav/chickadee/issues/72))
 - **The card sizing option "Fixed" is now "Fixed width",** to say what stays the same
+- **Search lists up to 50 results instead of 10.** The list shows 10 at a time and scrolls for the rest
 
 ## 0.2.0 - 2026-11-17
 

@@ -69,7 +69,7 @@ function split(text: string, ranges: number[], offset: number): Part[] {
  * matter, and words can be typed in any order. The returned function gives the best `limit`
  * results, best first.
  */
-export function createSearch(spaces: Space[], limit = 10): (query: string) => Result[] {
+export function createSearch(spaces: Space[], limit = 50): (query: string) => Result[] {
   const entries = spaces.flatMap((space) => [
     ...space.unsorted.filter((link) => link.openable).map((link) => ({ link, place: placeName(space) })),
     ...space.categories.flatMap((category) =>
