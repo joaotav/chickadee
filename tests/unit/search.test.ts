@@ -39,6 +39,7 @@ const spaces: Space[] = [
 const search = createSearch(spaces);
 const titles = (query: string) => search(query).map((result) => result.link.title);
 const marked = (parts: Part[]) => parts.map(({ text, match }) => (match ? `[${text}]` : text)).join('');
+const plain = (parts: Part[]) => parts.map(({ text }) => text).join('');
 
 describe('createSearch', () => {
   it('finds GitHub from "gthb"', () => {
@@ -66,9 +67,34 @@ describe('createSearch', () => {
   });
 
   it('covers every space and Unsorted, and says where each link lives', () => {
-    expect(search('gather').map((result) => result.place)).toEqual(['Work › Unsorted']);
-    expect(search('leitura')).toEqual([]);
-    expect(search('programacao').map((result) => result.place)).toEqual(['Home › Leitura']);
+    expect(search('gather').map((result) => plain(result.place))).toEqual(['Work › Unsorted']);
+    expect(search('programacao').map((result) => plain(result.place))).toEqual(['Home › Leitura']);
+  });
+
+  it('finds the links in a space or category by its name, and marks the name', () => {
+    expect(titles('leitura')).toEqual(['Programação em ação']);
+    expect(titles('repos')).toEqual(['GitHub', 'GitLab']);
+    expect(titles('home')).toEqual(['Programação em ação']);
+    expect(marked(search('repos')[0]!.place)).toBe('Work › [Repos]');
+    expect(marked(search('repos')[0]!.title)).toBe('GitHub');
+  });
+
+  it('ranks links whose title or site matches above links found by their place', () => {
+    const taxes: Space[] = [
+      {
+        id: 's',
+        name: 'Home',
+        emoji: null,
+        unsorted: [],
+        categories: [{ id: 'c', title: 'Taxes', links: [link('b', 'Bank', 'https://bank.example/'), link('t', 'Tax calculator', 'https://calc.example/')] }],
+      },
+    ];
+    expect(createSearch(taxes)('tax').map((result) => result.link.title)).toEqual(['Tax calculator', 'Bank']);
+  });
+
+  it('takes words from the title, the site and the place together', () => {
+    expect(titles('repos lab')).toEqual(['GitLab']);
+    expect(titles('acao leitura')).toEqual(['Programação em ação']);
   });
 
   it('leaves out links the page cannot open, and returns nothing for a blank query', () => {

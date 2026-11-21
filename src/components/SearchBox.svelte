@@ -121,7 +121,7 @@
               <LinkIcon link={result.link} />
               <span class="text">
                 <span class="title">{@render highlighted(result.title)}</span>
-                <span class="where">{result.place} · {@render highlighted(result.address)}</span>
+                <span class="where">{@render highlighted(result.place)} · {@render highlighted(result.address)}</span>
               </span>
             </li>
           {/each}
