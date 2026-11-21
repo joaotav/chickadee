@@ -71,3 +71,22 @@ test('Escape clears the search', async ({ dashboard }) => {
   await expect(box).toHaveValue('');
   await expect(dashboard.getByRole('listbox')).toBeHidden();
 });
+
+test('the results show 10 at a time and scroll to the selected one', async ({ dashboard }) => {
+  const docs = Array.from({ length: 15 }, (_, i) => ({ title: `Doc ${i + 1}`, url: `https://example.com/${i + 1}` }));
+  await addBookmarks(dashboard, [{ title: 'Work', children: [{ title: 'Docs', children: docs }] }]);
+  await dashboard.getByRole('combobox', { name: 'Search all spaces' }).fill('doc');
+  await expect(dashboard.getByRole('option')).toHaveCount(15);
+
+  const list = dashboard.getByRole('listbox');
+  const [height, rowHeight] = await list.evaluate((ul) => [
+    ul.getBoundingClientRect().height,
+    ul.firstElementChild!.getBoundingClientRect().height,
+  ]);
+  expect(height).toBeCloseTo(10 * rowHeight, 0);
+  await expect(dashboard.getByRole('option').nth(10)).not.toBeInViewport();
+
+  for (let i = 0; i < 12; i++) await dashboard.keyboard.press('ArrowDown');
+  await expect(dashboard.getByRole('option', { selected: true })).toHaveText(/Doc 13/);
+  await expect(dashboard.getByRole('option', { selected: true })).toBeInViewport();
+});
