@@ -12,6 +12,7 @@
 </script>
 
 <script lang="ts">
+  import { tick } from 'svelte';
   import { proto } from '@/lib/prototype.svelte';
 
   let {
@@ -45,6 +46,7 @@
   });
   $effect(() => {
     filter = '';
+    active = 0;
     width = undefined;
     flip = false;
     if (sub && list) {
@@ -70,14 +72,21 @@
 
   const focus = (element: HTMLElement) => element.focus();
 
-  function onsearchkeydown(event: KeyboardEvent) {
-    const first = shownGroups[0]?.places[0];
-    if (event.key === 'Enter' && first) {
+  // The arrow keys move a highlight through the places while the search field keeps the
+  // focus, and Enter picks the highlighted one.
+  const shownPlaces = $derived(shownGroups.flatMap((group) => group.places));
+  let active = $state(0);
+
+  async function onsearchkeydown(event: KeyboardEvent) {
+    const count = shownPlaces.length;
+    if (event.key === 'Enter' && shownPlaces[active]) {
       open = false;
-      sub!.places!.onpick(first.id);
-    } else if (event.key === 'ArrowDown') {
+      sub!.places!.onpick(shownPlaces[active]!.id);
+    } else if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && count > 0) {
       event.preventDefault();
-      root.querySelector<HTMLElement>('.place')?.focus();
+      active = (active + (event.key === 'ArrowDown' ? 1 : -1) + count) % count;
+      await tick();
+      root.querySelector('.places .active')?.scrollIntoView({ block: 'nearest' });
     }
   }
 
@@ -128,17 +137,17 @@
         <div class="head">
           <button class="back" onclick={() => (sub = null)}>‹ {sub.label.replace('…', '')}</button>
           {#if proto.variant === 'd'}
-            <input class="search" type="text" placeholder="Search" aria-label="Search places" bind:value={filter} onkeydown={onsearchkeydown} {@attach focus} />
+            <input class="search" type="text" placeholder="Search" aria-label="Search places" bind:value={filter} oninput={() => (active = 0)} onkeydown={onsearchkeydown} {@attach focus} />
           {/if}
         </div>
         <div class="places">
         {#each proto.variant === 'd' ? shownGroups : places.groups as group}
           {#if group.label}<span class="group">{group.label}</span>{/if}
           {#each group.places as place}
-            <!-- Enter in the search field picks the first match, so it's highlighted. -->
             <button
               class="place"
-              class:first={proto.variant === 'd' && filter.trim() !== '' && place === shownGroups[0]?.places[0]}
+              class:active={proto.variant === 'd' && place === shownPlaces[active]}
+              onmousemove={() => (active = shownPlaces.indexOf(place))}
               onclick={() => {
                 open = false;
                 places.onpick(place.id);
@@ -255,12 +264,12 @@
     transition: border-color 0.15s;
   }
   .items .search:focus {
-    border-color: var(--muted);
+    border-color: var(--accent);
   }
   .items .search::placeholder {
     color: var(--muted);
   }
-  .items .first {
+  .items .active {
     background: var(--row-hover);
   }
   .items .none {
