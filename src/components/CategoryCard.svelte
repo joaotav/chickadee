@@ -8,7 +8,7 @@
   import Grip from './Grip.svelte';
   import InlineInput from './InlineInput.svelte';
   import LinkItem from './LinkItem.svelte';
-  import Menu from './Menu.svelte';
+  import Menu, { type PlaceGroup } from './Menu.svelte';
 
   let {
     id,
@@ -23,6 +23,10 @@
     onupdatelink,
     ondeletelink,
     onmovelink,
+    spaces = [],
+    onmove,
+    linkPlaces = [],
+    onmovelinkto,
   }: {
     id: string;
     title: string;
@@ -39,7 +43,20 @@
     ondeletelink: (link: Link) => void;
     /** A link dropped into this card, to go before `before`, or at the end without it. */
     onmovelink: (id: string, before: string | undefined) => void;
+    /** The spaces the category can move to, and moving it to one. */
+    spaces?: PlaceGroup[];
+    onmove?: (spaceId: string) => void;
+    /** The categories its links can move to, by space, and moving a link to one. */
+    linkPlaces?: PlaceGroup[];
+    onmovelinkto?: (link: Link, categoryId: string) => void;
   } = $props();
+
+  // A link can move to any category but its own.
+  const otherPlaces = $derived(
+    linkPlaces
+      .map((group) => ({ ...group, places: group.places.filter((place) => place.id !== id) }))
+      .filter((group) => group.places.length > 0),
+  );
 
   // Follows the dragged link around, until the move is saved and the links come back from
   // the browser.
@@ -91,6 +108,7 @@
   const items = $derived([
     ...(urls.length > 0 ? [{ label: 'Open all bookmarks', onselect: openAll }] : []),
     ...(onrename ? [{ label: 'Rename', onselect: () => (renaming = true) }] : []),
+    ...(onmove && spaces.length > 0 ? [{ label: 'Move to…', places: { groups: spaces, onpick: onmove } }] : []),
     ...(ondelete ? [{ label: 'Delete', onselect: ondelete, danger: true }] : []),
   ]);
 </script>
@@ -163,7 +181,13 @@
         >
           {#each rows as link (link.id)}
             <li aria-label={link.title} animate:flip={{ duration: FLIP_MS }}>
-              <LinkItem {link} onupdate={(changes) => onupdatelink(link.id, changes)} ondelete={() => ondeletelink(link)} />
+              <LinkItem
+                {link}
+                onupdate={(changes) => onupdatelink(link.id, changes)}
+                ondelete={() => ondeletelink(link)}
+                places={otherPlaces}
+                onmove={onmovelinkto && ((categoryId) => onmovelinkto(link, categoryId))}
+              />
             </li>
           {/each}
         </ul>

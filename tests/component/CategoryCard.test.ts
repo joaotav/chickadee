@@ -154,4 +154,34 @@ describe('CategoryCard', () => {
     expect(screen.queryByRole('group', { name: 'Open all bookmarks' })).toBeNull();
     expect(onopenall).not.toHaveBeenCalled();
   });
+
+  it('moves itself to another space, from Move to… in its menu', async () => {
+    const onmove = vi.fn();
+    const spaces = [{ places: [{ id: 's2', label: '🏠 Home' }] }];
+    render(CategoryCard, { ...props, onrename: () => {}, ondelete: () => {}, spaces, onmove });
+    await fireEvent.click(screen.getByRole('button', { name: 'Actions for Repos' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Move to…' }));
+    await fireEvent.click(screen.getByRole('button', { name: '🏠 Home' }));
+    expect(onmove).toHaveBeenCalledWith('s2');
+  });
+
+  it('offers Move to… only when there is another space', async () => {
+    render(CategoryCard, { ...props, onrename: () => {}, ondelete: () => {}, spaces: [], onmove: () => {} });
+    await fireEvent.click(screen.getByRole('button', { name: 'Actions for Repos' }));
+    expect(screen.queryByRole('button', { name: 'Move to…' })).toBeNull();
+  });
+
+  it('lets its links move to any category but this one', async () => {
+    const onmovelinkto = vi.fn();
+    const linkPlaces = [
+      { label: '💼 Work', places: [{ id: 'c1', label: 'Repos' }, { id: 'c2', label: 'Docs' }] },
+      { label: '🏠 Home', places: [{ id: 'c3', label: 'Media' }] },
+    ];
+    render(CategoryCard, { ...props, linkPlaces, onmovelinkto });
+    await fireEvent.click(screen.getByRole('button', { name: 'Actions for GitHub' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Move to…' }));
+    expect(screen.queryByRole('button', { name: 'Repos' })).toBeNull();
+    await fireEvent.click(screen.getByRole('button', { name: 'Docs' }));
+    expect(onmovelinkto).toHaveBeenCalledWith(links[0], 'c2');
+  });
 });
