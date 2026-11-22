@@ -3,6 +3,7 @@
   import { flip } from 'svelte/animate';
   import { slide } from 'svelte/transition';
   import { outside } from '@/lib/outside';
+  import { proto } from '@/lib/prototype.svelte';
   import { sameName, type Link } from '@/lib/tree';
   import AddLink from './AddLink.svelte';
   import Grip from './Grip.svelte';
@@ -52,7 +53,7 @@
      * if the answer is Merge.
      */
     spaces?: PlaceGroup[];
-    onmove?: (spaceId: string) => { question: string; merge: () => void } | undefined;
+    onmove?: (spaceId: string) => Merging | undefined;
     /** The categories its links can move to, by space, and moving a link to one. */
     linkPlaces?: PlaceGroup[];
     onmovelinkto?: (link: Link, categoryId: string) => void;
@@ -86,8 +87,17 @@
   const CONFIRM_OVER = 10;
   // Only web links open, the same as clicking them.
   const urls = $derived(links.filter((link) => link.openable).map((link) => link.url));
+  // PROTOTYPE (#92): variant B's heading and detail, and which question it is.
+  type Merging = { question: string; heading?: string; detail?: string; merge: () => void };
+
   // A question asked on the card before acting, with a button to go ahead and one to cancel.
-  let asking = $state<{ label: string; question: string; answer: string; onanswer: () => void } | null>(null);
+  let asking = $state<{
+    label: string;
+    question: string;
+    answer: string;
+    onanswer: () => void;
+    merging?: Merging;
+  } | null>(null);
 
   function openAll() {
     if (urls.length > CONFIRM_OVER) {
@@ -99,7 +109,9 @@
 
   function moveTo(spaceId: string) {
     const merging = onmove?.(spaceId);
-    if (merging) asking = { label: `Merge ${title}`, question: merging.question, answer: 'Merge', onanswer: merging.merge };
+    // PROTOTYPE (#92, variant C): the menu asks instead of the card.
+    if (proto.variant === 'c') return merging;
+    if (merging) asking = { label: `Merge ${title}`, question: merging.question, answer: 'Merge', onanswer: merging.merge, merging };
   }
 
   const focus = (button: HTMLButtonElement) => button.focus();
@@ -157,11 +169,13 @@
     {/if}
   </div>
   {#if asking}
-    {@const { label, question, answer, onanswer } = asking}
+    {@const { label, question, answer, onanswer, merging } = asking}
     <!-- The listener catches Escape from the buttons inside, which are interactive. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="confirm"
+      class:heading={merging && proto.variant === 'b'}
+      class:wide={merging && proto.variant === 'd'}
       role="group"
       aria-label={label}
       {@attach outside(() => (asking = null))}
@@ -172,7 +186,12 @@
         }
       }}
     >
-      <span>{question}</span>
+      {#if merging && proto.variant === 'b'}
+        <strong>{merging.heading}</strong>
+        <span class="detail">{merging.detail}</span>
+      {:else}
+        <span>{question}</span>
+      {/if}
       <span class="answers">
         <button
           class="primary"
@@ -368,6 +387,32 @@
     float: right;
     gap: 6px;
     margin-left: 6px;
+  }
+  /* PROTOTYPE (#92), variants B and D: the question above, the buttons on a row of their own. */
+  .confirm:is(.heading, .wide) {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 8px 8px 10px;
+    line-height: 1.4;
+  }
+  .confirm:is(.heading, .wide) .answers {
+    float: none;
+    justify-content: flex-end;
+    margin: 8px 0 0;
+  }
+  .confirm.heading strong {
+    font-weight: 600;
+  }
+  .confirm.heading .detail {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .confirm.wide .answers button {
+    flex: 1;
+  }
+  .confirm.wide .answers button:not(.primary) {
+    background: var(--row);
   }
   .confirm button {
     width: auto;

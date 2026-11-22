@@ -12,8 +12,11 @@
     /** Shown in red, for actions like Delete. */
     danger?: boolean;
     /** Places the menu switches to when the item is chosen, with a search field above them. */
-    places?: { groups: PlaceGroup[]; onpick: (id: string) => void };
+    places?: { groups: PlaceGroup[]; onpick: (id: string) => Asked | void };
   }
+
+  /** PROTOTYPE (#92, variant C): a question the menu asks after a place is picked. */
+  export type Asked = { question: string; merge: () => void };
 
   // Lowercase and without accents, so "midia" matches "Mídia".
   const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
@@ -49,6 +52,8 @@
   // the menu narrower. One too wide for the room left of the button opens to its right.
   let width = $state<number>();
   let flip = $state(false);
+  // PROTOTYPE (#92, variant C): the question asked after picking a place.
+  let asked = $state<Asked | null>(null);
 
   const groups = $derived.by(() => {
     const words = plain(search).split(/\s+/).filter(Boolean);
@@ -65,7 +70,10 @@
   const places = $derived(groups.flatMap((group) => group.places));
 
   $effect(() => {
-    if (!open) chosen = null;
+    if (!open) {
+      chosen = null;
+      asked = null;
+    }
   });
 
   $effect(() => {
@@ -90,9 +98,9 @@
   }
 
   function pick(id: string) {
-    const onpick = chosen!.places!.onpick;
-    open = false;
-    onpick(id);
+    const result = chosen!.places!.onpick(id);
+    if (result) asked = result;
+    else open = false;
   }
 
   async function back() {
@@ -147,7 +155,23 @@
       style:width={chosen && width ? `${width}px` : undefined}
       bind:this={list}
     >
-      {#if chosen}
+      {#if asked}
+        {@const { question, merge } = asked}
+        <div class="ask">
+          <p>{question}</p>
+          <div class="answers">
+            <button
+              class="primary"
+              onclick={() => {
+                merge();
+                open = false;
+              }}
+              {@attach focus}>Merge</button
+            >
+            <button onclick={() => (open = false)}>Cancel</button>
+          </div>
+        </div>
+      {:else if chosen}
         <!-- Stay in place while the places below scroll. -->
         <div class="head">
           <button class="back" onclick={back}>‹ {chosen.label.replace(/…$/, '')}</button>
@@ -297,6 +321,37 @@
   .none {
     padding: 6px 10px;
     color: var(--muted);
+  }
+  /* PROTOTYPE (#92, variant C). */
+  .ask {
+    padding: 6px 8px 4px;
+  }
+  .ask p {
+    margin: 0 0 10px;
+    line-height: 1.4;
+    white-space: normal;
+  }
+  .ask .answers {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .items .ask button {
+    height: 26px;
+    padding: 0 10px;
+    color: var(--muted);
+  }
+  .items .ask button:hover {
+    color: var(--fg);
+  }
+  .items .ask .primary {
+    background: var(--accent-fill);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .items .ask .primary:hover {
+    background: var(--accent-fill);
+    filter: brightness(1.1);
   }
   .items .danger {
     color: var(--danger);
