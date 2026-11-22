@@ -1,7 +1,28 @@
+<script lang="ts" module>
+  /** Asked before importing a file whose spaces are already here: the names here, and the import to run. */
+  export interface ImportQuestion {
+    taken: string[];
+    run: (mode: 'merge' | 'separate') => void;
+  }
+</script>
+
 <script lang="ts">
+  import { pickFile } from '@/lib/files';
   import { OPTIONS, type Settings } from '@/lib/settings';
 
-  let { settings, onchange }: { settings: Settings; onchange: (settings: Settings) => void } = $props();
+  let {
+    settings,
+    onchange,
+    onexport,
+    onimport,
+  }: {
+    settings: Settings;
+    onchange: (settings: Settings) => void;
+    /** Saves the Workspace as a bookmarks file. */
+    onexport: () => void;
+    /** Imports a bookmarks file, or returns a question to ask first. */
+    onimport: (html: string) => ImportQuestion | undefined;
+  } = $props();
 
   const GROUPS: { key: keyof Settings; label: string }[] = [
     { key: 'layout', label: 'Layout' },
@@ -14,6 +35,34 @@
   let open = $state(false);
   let root: HTMLElement;
   let toggleButton: HTMLButtonElement;
+  let question = $state<ImportQuestion | null>(null);
+
+  $effect(() => {
+    if (!open) question = null;
+  });
+
+  async function importFile() {
+    const html = await pickFile();
+    if (html === null) return;
+    question = onimport(html) ?? null;
+    if (!question) close();
+  }
+
+  function answer(mode: 'merge' | 'separate') {
+    const { run } = question!;
+    close();
+    run(mode);
+  }
+
+  // “Work”, “Work” and “Home”, or “Work”, “Home” and 3 more.
+  function names(list: string[]) {
+    const quoted = list.map((name) => `“${name}”`);
+    if (quoted.length === 1) return quoted[0];
+    if (quoted.length === 2) return `${quoted[0]} and ${quoted[1]}`;
+    return `${quoted[0]}, ${quoted[1]} and ${quoted.length - 2} more`;
+  }
+
+  const focus = (button: HTMLButtonElement) => button.focus();
 
   function choose(key: keyof Settings, value: string) {
     onchange({ ...settings, [key]: value });
@@ -54,7 +103,7 @@
     </svg>
   </button>
   {#if open}
-    <div id="settings-panel" class="panel" role="dialog" aria-label="Display settings">
+    <div id="settings-panel" class="panel" role="dialog" aria-label="Settings">
       {#each GROUPS as group (group.key)}
         <fieldset>
           <legend>{group.label}</legend>
@@ -74,6 +123,29 @@
           </div>
         </fieldset>
       {/each}
+      <section aria-labelledby="bookmarks-heading">
+        <h3 id="bookmarks-heading" class="legend">Bookmarks</h3>
+        {#if question}
+          <div class="question" role="group" aria-label="Import">
+            <strong>Merge the file's spaces into yours?</strong>
+            <span class="detail">
+              {names(question.taken)}
+              {question.taken.length === 1 ? 'is' : 'are'} already here. Keep separate adds them with a number, like “{question.taken[0]} (2)”.
+            </span>
+            <div class="answers">
+              <button class="primary" onclick={() => answer('merge')} {@attach focus}>Merge</button>
+              <button onclick={() => answer('separate')}>Keep separate</button>
+              <button onclick={() => (question = null)}>Cancel</button>
+            </div>
+          </div>
+        {:else}
+          <div class="files">
+            <button onclick={onexport}>Export</button>
+            <button onclick={importFile}>Import…</button>
+          </div>
+          <p class="note">Your spaces, categories and links, as a bookmarks file that browsers and other tools can import.</p>
+        {/if}
+      </section>
       {#if import.meta.env.DEV}
         <!-- Development builds only. Loaded on demand, so releases leave the samples out. -->
         <div class="samples">
@@ -122,6 +194,9 @@
     flex-direction: column;
     gap: 14px;
     width: 300px;
+    /* Scrolls in a window too short for all of it. */
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
     padding: 14px;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -133,8 +208,9 @@
     padding: 0;
     border: 0;
   }
-  legend {
-    margin-bottom: 6px;
+  legend,
+  .legend {
+    margin: 0 0 6px;
     padding: 0;
     color: var(--muted);
     font-size: 11px;
@@ -167,6 +243,68 @@
   label:has(:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+  .files {
+    display: flex;
+    gap: 6px;
+  }
+  .files button {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--muted);
+  }
+  .files button:hover {
+    background: var(--row);
+    color: var(--fg);
+  }
+  .note {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  /* Like the questions on cards: a heading and the detail under it, then the buttons. */
+  .question {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 8px 8px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    line-height: 1.4;
+  }
+  .question strong {
+    font-weight: 600;
+  }
+  .question .detail {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .answers {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .answers button {
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 6px;
+    color: var(--muted);
+  }
+  .answers button:hover {
+    background: var(--row-hover);
+    color: var(--fg);
+  }
+  .answers .primary {
+    background: var(--accent-fill);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .answers .primary:hover {
+    background: var(--accent-fill);
+    color: var(--bg);
+    filter: brightness(1.1);
   }
   .samples {
     display: flex;

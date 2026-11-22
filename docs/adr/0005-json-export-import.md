@@ -1,6 +1,6 @@
 # 5. JSON export and import to move between browsers
 
-Status: accepted, 2026-11-03. Deferred until after the MVP.
+Status: superseded by [ADR 0007](0007-bookmarks-html-export-import.md), 2026-11-22. Accepted 2026-11-03 and deferred until after the MVP, but never built.
 
 ## Context
 

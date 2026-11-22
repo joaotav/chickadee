@@ -2,7 +2,8 @@ import { browser } from 'wxt/browser';
 import type { BookmarkNode } from './node';
 import { pickOtherBookmarksFolder } from './root';
 
-const WORKSPACE_TITLE = 'Workspace';
+/** The folder in Other Bookmarks that holds every space. */
+export const WORKSPACE_TITLE = 'Workspace';
 const ROOT_ID_KEY = 'workspaceRootId';
 
 /**

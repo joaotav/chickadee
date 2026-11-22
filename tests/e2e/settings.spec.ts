@@ -15,7 +15,7 @@ const sample: Seed[] = [
 ];
 
 const choose = async (page: Page, option: string) => {
-  const panel = page.getByRole('dialog', { name: 'Display settings' });
+  const panel = page.getByRole('dialog', { name: 'Settings' });
   if (!(await panel.isVisible())) await page.getByRole('button', { name: 'Settings' }).click();
   await panel.getByRole('radio', { name: option }).check();
 };
@@ -100,7 +100,7 @@ test('density, titles and sizing change the cards', async ({ dashboard }) => {
 });
 
 test('the settings panel closes on Escape and on a click outside', async ({ dashboard }) => {
-  const panel = dashboard.getByRole('dialog', { name: 'Display settings' });
+  const panel = dashboard.getByRole('dialog', { name: 'Settings' });
   await dashboard.getByRole('button', { name: 'Settings' }).click();
   await expect(panel).toBeVisible();
   await dashboard.keyboard.press('Escape');

@@ -4,6 +4,10 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ## Unreleased
 
+### Features
+
+- **Export and import your bookmarks,** from the new **Bookmarks** section of the settings panel, as a bookmarks file that browsers and other tools can read. Import works with files from Firefox, Chrome and most bookmark tools, merges spaces with the same name after asking, never changes what you have, and **Undo** removes what it added. The empty page offers it too, for bringing your links in from another browser ([#41](https://github.com/joaotav/chickadee/issues/41))
+
 ### Improvements
 
 - **Edit a bookmark's title and URL in one form,** from **Edit bookmark** in its **⋯** menu, which replaces **Rename** and **Edit URL**. The form is the same as **+ Add bookmark** ([#82](https://github.com/joaotav/chickadee/issues/82))
