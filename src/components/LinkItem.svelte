@@ -3,17 +3,22 @@
   import Grip from './Grip.svelte';
   import InlineInput from './InlineInput.svelte';
   import LinkIcon from './LinkIcon.svelte';
-  import Menu from './Menu.svelte';
+  import Menu, { type PlaceGroup } from './Menu.svelte';
 
   let {
     link,
     onupdate,
     ondelete,
+    places = [],
+    onmove,
   }: {
     link: Link;
     /** Renames the link or changes its URL. Without it, the link can't be edited. */
     onupdate?: (changes: { title?: string; url?: string }) => void;
     ondelete?: () => void;
+    /** The categories the link can move to, by space, and moving it to one. */
+    places?: PlaceGroup[];
+    onmove?: (categoryId: string) => void;
   } = $props();
 
   let editing = $state<'title' | 'url' | null>(null);
@@ -83,6 +88,7 @@
       items={[
         { label: 'Rename', onselect: () => (editing = 'title') },
         { label: 'Edit URL', onselect: () => (editing = 'url') },
+        ...(onmove && places.length > 0 ? [{ label: 'Move to…', places: { groups: places, onpick: onmove } }] : []),
         ...(ondelete ? [{ label: 'Delete', onselect: ondelete, danger: true }] : []),
       ]}
     />

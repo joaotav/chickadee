@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import { create, ensureRoot, getWorkspace, move, subscribe, update } from '@/lib/bookmarks';
+import { create, ensureRoot, getWorkspace, move, position, subscribe, update } from '@/lib/bookmarks';
 import { installFakeBookmarks } from '../fixtures/fake-bookmarks';
 import { chromeRoot, firefoxRoot, folder, link, separator } from '../fixtures/trees';
 
@@ -195,5 +195,20 @@ describe.each([
     const titles = setup();
     await move('c1', { parentId: 'w', before: 'c3' });
     expect(titles('w')).toEqual(['Docs', 'Repos', 'Empty']);
+  });
+
+  it('gives where an item is, so moving it back there undoes a move', async () => {
+    const titles = setup();
+    const middle = await position('b');
+    const last = await position('c');
+    expect(middle).toEqual({ parentId: 'c1', before: 'c' });
+    expect(last).toEqual({ parentId: 'c1' });
+    await move('b', { parentId: 'c3' });
+    await move('c', { parentId: 'c2' });
+    // Undone in reverse, as Undo does: B goes back before C, so C has to be back first.
+    await move('c', last);
+    await move('b', middle);
+    expect(titles('c1')).toEqual(['A', 'B', 'C']);
+    expect(titles('c3')).toEqual([]);
   });
 });

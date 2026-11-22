@@ -4,6 +4,10 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ## Unreleased
 
+### Features
+
+- **Move a category to another space, or a bookmark to a category in any space,** with **Move to…** in its **⋯** menu. The list of places has a search field, and **Undo** puts it back ([#59](https://github.com/joaotav/chickadee/issues/59))
+
 ### Improvements
 
 - **Drag a bookmark from anywhere on it,** as with categories, instead of by a grip over its icon. A click still opens it. With the keyboard, Tab to a bookmark's grip, now shown as an outline around it, and Space picks it up as before ([#72](https://github.com/joaotav/chickadee/issues/72))
