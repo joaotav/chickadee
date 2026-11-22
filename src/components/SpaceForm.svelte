@@ -1,6 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { outside } from '@/lib/outside';
+  import { proto } from '@/lib/prototype.svelte';
+  import EmojiPicker from './EmojiPicker.svelte';
   import { splitEmoji } from '@/lib/tree';
 
   let {
@@ -26,6 +28,14 @@
   let chosen = $state(untrack(() => emoji));
   let text = $state(untrack(() => name));
   let custom = $state('');
+  // PROTOTYPE (#64): whether the full picker is open, in variants B and C.
+  let picking = $state(false);
+  const QUICK = EMOJI.slice(0, 14);
+
+  function pick(emoji: string) {
+    chosen = emoji;
+    picking = false;
+  }
 
   const focus = (input: HTMLInputElement) => input.focus();
 
@@ -61,29 +71,58 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form class="space-form" aria-label={heading} {onsubmit} {onkeydown} {@attach outside(closeIfUnchanged)}>
   <h2>{heading}</h2>
-  <input class="name" bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
-  <fieldset>
-    <legend>Icon</legend>
-    <div class="grid">
-      <label class="none" title="No icon">
-        <input type="radio" name="emoji" checked={chosen === null} onchange={() => (chosen = null)} />
-        <span aria-hidden="true">∅</span><span class="visually-hidden">No icon</span>
-      </label>
-      {#each EMOJI as option (option)}
-        <label>
-          <input type="radio" name="emoji" checked={chosen === option} onchange={() => (chosen = option)} />
-          {option}
-        </label>
-      {/each}
-      {#if chosen !== null && !EMOJI.includes(chosen)}
-        <label>
-          <input type="radio" name="emoji" checked onchange={() => {}} />
-          {chosen}
-        </label>
-      {/if}
+  {#if proto.variant === 'b'}
+    <div class="name-row">
+      <button type="button" class="icon-button" aria-label="Icon" aria-expanded={picking} onclick={() => (picking = !picking)}>
+        {chosen ?? '∅'}
+      </button>
+      <input class="name" bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
     </div>
-    <input class="custom" bind:value={custom} oninput={onCustomInput} aria-label="Other emoji" placeholder="Or type or paste any emoji" />
-  </fieldset>
+    {#if picking}
+      <EmojiPicker onpick={pick} />
+      <button type="button" class="link" onclick={() => {
+          chosen = null;
+          picking = false;
+        }}>No icon</button>
+    {/if}
+  {:else}
+    <input class="name" bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
+  {/if}
+  {#if proto.variant === 'a'}
+    <fieldset>
+      <legend>Icon</legend>
+      <div class="current">
+        <span class="preview">{chosen ?? '∅'}</span>
+        <span>{chosen ? 'Picked' : 'No icon'}</span>
+        {#if chosen}<button type="button" class="link" onclick={() => (chosen = null)}>No icon</button>{/if}
+      </div>
+      <EmojiPicker onpick={(emoji) => (chosen = emoji)} />
+    </fieldset>
+  {:else if proto.variant === 'c'}
+    <fieldset>
+      <legend>Icon</legend>
+      <div class="grid">
+        <label class="none" title="No icon">
+          <input type="radio" name="emoji" checked={chosen === null} onchange={() => (chosen = null)} />
+          <span aria-hidden="true">∅</span><span class="visually-hidden">No icon</span>
+        </label>
+        {#each QUICK as option (option)}
+          <label>
+            <input type="radio" name="emoji" checked={chosen === option} onchange={() => (chosen = option)} />
+            {option}
+          </label>
+        {/each}
+        {#if chosen !== null && !QUICK.includes(chosen)}
+          <label>
+            <input type="radio" name="emoji" checked onchange={() => {}} />
+            {chosen}
+          </label>
+        {/if}
+        <button type="button" class="more" aria-expanded={picking} onclick={() => (picking = !picking)} title="More emoji">More…</button>
+      </div>
+      {#if picking}<EmojiPicker onpick={pick} />{/if}
+    </fieldset>
+  {/if}
   <div class="buttons">
     <button type="button" onclick={oncancel}>Cancel</button>
     <button type="submit" class="primary" disabled={!splitEmoji(text.trim()).name}>Save</button>
@@ -139,6 +178,63 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+  .name-row {
+    display: flex;
+    gap: 6px;
+  }
+  .icon-button {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    font-size: 16px;
+  }
+  .icon-button:hover,
+  .icon-button[aria-expanded='true'] {
+    border-color: var(--accent);
+  }
+  .link {
+    align-self: flex-start;
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .link:hover {
+    text-decoration: underline;
+  }
+  .current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .current .link {
+    margin-left: auto;
+  }
+  .preview {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--row);
+    color: var(--fg);
+    font-size: 17px;
+  }
+  .more {
+    grid-column: span 2;
+    height: 32px;
+    border-radius: 6px;
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .more:hover,
+  .more[aria-expanded='true'] {
+    background: var(--row);
   }
   .grid {
     display: grid;
