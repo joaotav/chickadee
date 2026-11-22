@@ -5,7 +5,6 @@
     value,
     label,
     placeholder,
-    allowEmpty = false,
     onsave,
     oncancel,
   }: {
@@ -13,8 +12,6 @@
     /** Accessible name of the text field, like "Category name". */
     label: string;
     placeholder?: string;
-    /** Saves an empty field instead of cancelling, for fields that have a default. */
-    allowEmpty?: boolean;
     /** Receives the trimmed text. Returning a message keeps the field open and shows it. */
     onsave: (text: string) => string | void;
     oncancel: () => void;
@@ -33,7 +30,7 @@
   function finish(fromBlur: boolean) {
     if (done) return;
     const trimmed = text.trim();
-    if ((!trimmed && !allowEmpty) || trimmed === value) return cancel();
+    if (!trimmed || trimmed === value) return cancel();
     const error = onsave(trimmed);
     if (!error) {
       done = true;

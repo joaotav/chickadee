@@ -88,10 +88,9 @@ describe('CategoryCard', () => {
     const onupdatelink = vi.fn();
     render(CategoryCard, { ...props, onupdatelink });
     await fireEvent.click(screen.getByRole('button', { name: 'Actions for GitLab' }));
-    await fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
-    const field = screen.getByRole('textbox', { name: 'Title' });
-    await fireEvent.input(field, { target: { value: 'Lab' } });
-    await fireEvent.keyDown(field, { key: 'Enter' });
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit bookmark' }));
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'Lab' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(onupdatelink).toHaveBeenCalledWith('l2', { title: 'Lab' });
   });
 
