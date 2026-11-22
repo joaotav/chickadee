@@ -34,21 +34,37 @@
 
   let sub = $state<MenuItem | null>(null);
   let filter = $state('');
+  let list = $state<HTMLElement>();
+  // The list of places keeps the width it opens with, all places shown, so it doesn't change
+  // width while a search narrows it. Its height may shrink.
+  let width = $state<number>();
+  // A list too wide for the room left of the button opens to its right instead.
+  let flip = $state(false);
   $effect(() => {
     if (!open) sub = null;
   });
   $effect(() => {
-    if (sub) filter = '';
+    filter = '';
+    width = undefined;
+    flip = false;
+    if (sub && list) {
+      const rect = list.getBoundingClientRect();
+      width = rect.width;
+      flip = align === 'right' && rect.left < 8;
+    }
   });
 
-  // Places whose name, or whose space's name, contains what was typed.
+  // Places where every typed word is in the place's name or its space's name.
   const shownGroups = $derived.by(() => {
-    const query = filter.trim().toLowerCase();
+    const words = filter.toLowerCase().split(/\s+/).filter(Boolean);
     return (sub?.places?.groups ?? [])
-      .map((group) => {
-        const groupMatches = !!group.label && group.label.toLowerCase().includes(query);
-        return { ...group, places: group.places.filter((place) => groupMatches || place.label.toLowerCase().includes(query)) };
-      })
+      .map((group) => ({
+        ...group,
+        places: group.places.filter((place) => {
+          const text = `${group.label ?? ''} ${place.label}`.toLowerCase();
+          return words.every((word) => text.includes(word));
+        }),
+      }))
       .filter((group) => group.places.length > 0);
   });
 
@@ -99,13 +115,23 @@
     {/if}
   </button>
   {#if open}
-    <div class="items" class:left={align === 'left'}>
+    <div
+      class="items"
+      class:left={align === 'left' || flip}
+      class:sub={!!sub?.places}
+      bind:this={list}
+      style:width={sub?.places && width ? `${width}px` : undefined}
+    >
       {#if sub?.places}
         {@const places = sub.places}
-        <button class="back" onclick={() => (sub = null)}>‹ {sub.label.replace('…', '')}</button>
-        {#if proto.variant === 'd'}
-          <input class="search" type="text" placeholder="Search" aria-label="Search places" bind:value={filter} onkeydown={onsearchkeydown} {@attach focus} />
-        {/if}
+        <!-- Stays in place while the places below scroll. -->
+        <div class="head">
+          <button class="back" onclick={() => (sub = null)}>‹ {sub.label.replace('…', '')}</button>
+          {#if proto.variant === 'd'}
+            <input class="search" type="text" placeholder="Search" aria-label="Search places" bind:value={filter} onkeydown={onsearchkeydown} {@attach focus} />
+          {/if}
+        </div>
+        <div class="places">
         {#each proto.variant === 'd' ? shownGroups : places.groups as group}
           {#if group.label}<span class="group">{group.label}</span>{/if}
           {#each group.places as place}
@@ -122,6 +148,7 @@
         {:else}
           <span class="none">No matches</span>
         {/each}
+        </div>
       {:else}
         <!-- Not keyed: two items can share a label, like two spaces with the same name. -->
         {#each items as item}
@@ -200,17 +227,35 @@
     margin-bottom: 2px;
     color: var(--muted);
   }
+  .items.sub {
+    overflow: hidden;
+  }
+  .head {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+  }
+  .places {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+  }
   .items .search {
     flex: none;
-    height: 26px;
-    margin: 0 2px 4px;
-    padding: 0 8px;
-    border: none;
-    border-radius: 5px;
+    height: 28px;
+    margin: 2px 2px 6px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     outline: none;
     background: var(--bg);
     color: var(--fg);
     font: inherit;
+    transition: border-color 0.15s;
+  }
+  .items .search:focus {
+    border-color: var(--muted);
   }
   .items .search::placeholder {
     color: var(--muted);
