@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultTitle, joinEmoji, placesOf, splitEmoji, toSpaces, toWebUrl, UNSORTED } from '@/lib/tree';
+import { defaultTitle, joinEmoji, placesOf, sameName, splitEmoji, toSpaces, toWebUrl, UNSORTED } from '@/lib/tree';
 import { folder, link, separator } from '../fixtures/trees';
 
 describe('splitEmoji', () => {
@@ -123,6 +123,18 @@ describe('joinEmoji', () => {
 
   it('uses the name alone without an emoji', () => {
     expect(joinEmoji(null, 'Work')).toBe('Work');
+  });
+});
+
+describe('sameName', () => {
+  it('ignores letter case and spaces around the name', () => {
+    expect(sameName('Work', ' work ')).toBe(true);
+    expect(sameName('Ärger', 'ärger')).toBe(true);
+  });
+
+  it('tells apart names that differ in letters or accents', () => {
+    expect(sameName('Work', 'Works')).toBe(false);
+    expect(sameName('Café', 'Cafe')).toBe(false);
   });
 });
 

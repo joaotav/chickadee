@@ -100,6 +100,15 @@
     moveItem(detail.info.id, active.id, ids[ids.indexOf(detail.info.id) + 1]);
   }
 
+  // Names a category in the open space can't take: the other categories', and Unsorted while its card shows.
+  const categoryNames = (exceptId?: string) =>
+    active
+      ? [
+          ...(active.unsorted.length > 0 ? [UNSORTED] : []),
+          ...active.categories.filter((category) => category.id !== exceptId).map((category) => category.title),
+        ]
+      : [];
+
   async function saveSpace(emoji: string | null, name: string) {
     const title = joinEmoji(emoji, name);
     if (spaceForm === 'rename' && active) {
@@ -267,6 +276,7 @@
                 heading={spaceForm === 'new' ? 'New space' : 'Rename space'}
                 emoji={spaceForm === 'rename' ? active?.emoji : null}
                 name={spaceForm === 'rename' ? active?.name : ''}
+                taken={(spaces ?? []).filter((space) => spaceForm === 'new' || space.id !== active?.id).map((space) => space.name)}
                 onsave={saveSpace}
                 oncancel={() => (spaceForm = null)}
               />
@@ -329,6 +339,7 @@
               collapsed={collapsed.includes(category.id)}
               ontoggle={() => toggle(category.id)}
               onrename={(title) => void update(category.id, { title })}
+              taken={categoryNames(category.id)}
               ondelete={() => void deleteItem(category.id, `Deleted “${category.title}”`)}
               onopenall={(urls) => void openInBackground(urls)}
               onadd={addLink(category.id)}
@@ -341,7 +352,7 @@
               onmovelinkto={moveLink}
             />
           {:else if card.id === NEW_CATEGORY}
-            <NewCategory oncreate={(title) => void create(active.id, title)} />
+            <NewCategory oncreate={(title) => void create(active.id, title)} taken={categoryNames()} />
           {:else}
             <CategoryCard
               id={active.id}

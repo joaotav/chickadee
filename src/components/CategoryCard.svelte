@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import { slide } from 'svelte/transition';
   import { outside } from '@/lib/outside';
-  import type { Link } from '@/lib/tree';
+  import { sameName, type Link } from '@/lib/tree';
   import AddLink from './AddLink.svelte';
   import Grip from './Grip.svelte';
   import InlineInput from './InlineInput.svelte';
@@ -17,6 +17,7 @@
     collapsed,
     ontoggle,
     onrename,
+    taken = [],
     ondelete,
     onopenall,
     onadd,
@@ -35,6 +36,8 @@
     ontoggle: () => void;
     /** Without these, the category can't be renamed, deleted or moved, like the "Unsorted" card. */
     onrename?: (title: string) => void;
+    /** The names of the other categories in its space, which it can't be renamed to. */
+    taken?: string[];
     ondelete?: () => void;
     /** Receives the URLs to open, after asking first when there are many. */
     onopenall: (urls: string[]) => void;
@@ -123,6 +126,8 @@
         value={title}
         label="Category name"
         onsave={(text) => {
+          const clash = taken.find((other) => sameName(other, text));
+          if (clash) return `There's already a category called “${clash}”`;
           onrename?.(text);
           renaming = false;
         }}

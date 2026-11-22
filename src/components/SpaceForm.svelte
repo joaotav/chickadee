@@ -1,19 +1,22 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { outside } from '@/lib/outside';
-  import { splitEmoji } from '@/lib/tree';
+  import { sameName, splitEmoji } from '@/lib/tree';
   import EmojiPicker from './EmojiPicker.svelte';
 
   let {
     heading,
     emoji = null,
     name = '',
+    taken = [],
     onsave,
     oncancel,
   }: {
     heading: string;
     emoji?: string | null;
     name?: string;
+    /** The other spaces' names, which this one can't take. */
+    taken?: string[];
     onsave: (emoji: string | null, name: string) => void;
     oncancel: () => void;
   } = $props();
@@ -21,6 +24,11 @@
   let chosen = $state(untrack(() => emoji));
   let text = $state(untrack(() => name));
   let picking = $state(false);
+  // The space already called what's typed, ignoring the icon.
+  const clash = $derived.by(() => {
+    const typed = splitEmoji(text.trim()).name;
+    return typed ? taken.find((other) => sameName(other, typed)) : undefined;
+  });
 
   const focus = (input: HTMLInputElement) => input.focus();
 
@@ -38,7 +46,7 @@
     event.preventDefault();
     // An emoji typed at the start of the name works too.
     const split = splitEmoji(text.trim());
-    if (!split.name) return;
+    if (!split.name || clash) return;
     onsave(split.emoji ?? chosen, split.name);
   }
 
@@ -77,7 +85,7 @@
           </svg>
         {/if}
       </button>
-      <input bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
+      <input bind:value={text} aria-label="Space name" placeholder="Name" aria-invalid={clash !== undefined} {@attach focus} />
     </div>
     {#if picking}
       <div class="popover">
@@ -85,9 +93,10 @@
       </div>
     {/if}
   </div>
+  {#if clash !== undefined}<p class="message" role="alert">There's already a space called “{clash}”</p>{/if}
   <div class="buttons">
     <button type="button" onclick={oncancel}>Cancel</button>
-    <button type="submit" class="primary" disabled={!splitEmoji(text.trim()).name}>Save</button>
+    <button type="submit" class="primary" disabled={!splitEmoji(text.trim()).name || clash !== undefined}>Save</button>
   </div>
 </form>
 
@@ -168,6 +177,11 @@
     border-radius: 10px;
     background: var(--card);
     box-shadow: 0 12px 32px #0008;
+  }
+  .message {
+    margin: -6px 0 0;
+    color: var(--danger);
+    font-size: 11px;
   }
   .buttons {
     display: flex;

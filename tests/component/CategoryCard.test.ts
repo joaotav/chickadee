@@ -84,6 +84,21 @@ describe('CategoryCard', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 
+  it('refuses to be renamed to the name of another category in its space', async () => {
+    const onrename = vi.fn();
+    render(CategoryCard, { ...props, taken: ['Docs'], onrename, ondelete: () => {} });
+    await fireEvent.click(screen.getByRole('button', { name: 'Actions for Repos' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    const field = screen.getByRole('textbox', { name: 'Category name' });
+    await fireEvent.input(field, { target: { value: 'DOCS' } });
+    await fireEvent.keyDown(field, { key: 'Enter' });
+    expect(screen.getByText('There\'s already a category called “Docs”')).toHaveRole('alert');
+    expect(onrename).not.toHaveBeenCalled();
+    await fireEvent.input(field, { target: { value: 'repos' } });
+    await fireEvent.keyDown(field, { key: 'Enter' });
+    expect(onrename).toHaveBeenCalledWith('repos');
+  });
+
   it('passes link edits on with the link\'s ID', async () => {
     const onupdatelink = vi.fn();
     render(CategoryCard, { ...props, onupdatelink });

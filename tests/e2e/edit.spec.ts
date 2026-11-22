@@ -167,6 +167,42 @@ test('refuses an address that is not a web page, and Escape leaves the link unch
   expect((await bookmark(dashboard, ids['GitHub']!)).url).toBe('https://github.com/');
 });
 
+test('refuses a space or category name that is already taken', async ({ dashboard }) => {
+  const ids = await addBookmarks(dashboard, [
+    { title: '💼 Work', children: [{ title: 'Repos', children: [] }, { title: 'Docs', children: [] }] },
+    { title: 'Home', children: [{ title: 'Repos', children: [] }] },
+  ]);
+  // A new space can't take another one's name, whatever its icon or letter case.
+  await dashboard.getByRole('button', { name: 'New space' }).click();
+  const form = dashboard.getByRole('form', { name: 'New space' });
+  await form.getByRole('textbox', { name: 'Space name' }).fill('work');
+  await expect(form.getByRole('alert')).toHaveText('There\'s already a space called “Work”');
+  await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
+  await dashboard.keyboard.press('Escape');
+
+  // Nor can a new or renamed category take the name of another in its space.
+  await dashboard.getByRole('button', { name: '+ New category' }).click();
+  await dashboard.getByRole('textbox', { name: 'Category name' }).fill('repos');
+  await expect(dashboard.getByText('There\'s already a category called “Repos”')).toHaveRole('alert');
+  await expect(dashboard.getByRole('button', { name: 'Add', exact: true })).toBeDisabled();
+  await dashboard.keyboard.press('Escape');
+  await dashboard.getByRole('button', { name: 'Actions for Docs' }).click();
+  await dashboard.getByRole('button', { name: 'Rename' }).click();
+  await dashboard.getByRole('textbox', { name: 'Category name' }).fill('Repos');
+  await dashboard.keyboard.press('Enter');
+  await expect(dashboard.getByText('There\'s already a category called “Repos”')).toHaveRole('alert');
+  await dashboard.keyboard.press('Escape');
+  expect(await childTitles(dashboard, ids['💼 Work']!)).toEqual(['Repos', 'Docs']);
+
+  // Another space can have a category with the same name.
+  await dashboard.getByRole('tab', { name: /Home/ }).click();
+  await dashboard.getByRole('button', { name: '+ New category' }).click();
+  await dashboard.getByRole('textbox', { name: 'Category name' }).fill('Docs');
+  await dashboard.keyboard.press('Enter');
+  await expect(dashboard.getByRole('heading', { name: /^Docs/ })).toBeVisible();
+  expect(await childTitles(dashboard, ids['Home']!)).toEqual(['Repos', 'Docs']);
+});
+
 test('the Unsorted card and tab cannot be renamed', async ({ dashboard }) => {
   await addBookmarks(dashboard, sample);
   await expect(dashboard.getByRole('heading', { name: /^Unsorted/ })).toBeVisible();

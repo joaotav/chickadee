@@ -295,6 +295,7 @@ Verify: change every setting, open a new tab, the choices stuck. On a second com
 - New space from the "+" tab. Rename and delete a space from the ⋯ in its tab, shown on the selected tab only. Deleting a space that holds categories or bookmarks asks first, naming how many of each.
 - New category button. Add link form inside a category with URL and optional title. The title defaults to the URL's hostname.
 - Inline rename for categories. A link's Edit bookmark opens the add link form with its URL and title filled in (#82). Enter saves, Escape cancels.
+- No two spaces, and no two categories in one space, share a name: the forms refuse a taken one, ignoring the space's icon and letter case (#92).
 - Delete with an undo toast lasting 10 seconds, paused while the pointer is over it. Undo recreates the snapshotted subtree at its original position and moves its `collapsed` and `icon:` metadata to the new IDs. Only the most recent delete is undoable.
 - "Open all" on a category opens its links in new background tabs, asking first if there are more than 10.
 

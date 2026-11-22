@@ -1,10 +1,19 @@
 <script lang="ts">
   import { outside } from '@/lib/outside';
+  import { sameName } from '@/lib/tree';
 
-  let { oncreate }: { oncreate: (title: string) => void } = $props();
+  let {
+    oncreate,
+    taken = [],
+  }: {
+    oncreate: (title: string) => void;
+    /** The names of the categories already in the space, which a new one can't take. */
+    taken?: string[];
+  } = $props();
 
   let open = $state(false);
   let name = $state('');
+  const clash = $derived(name.trim() ? taken.find((other) => sameName(other, name)) : undefined);
 
   const focus = (input: HTMLInputElement) => input.focus();
 
@@ -20,7 +29,7 @@
 
   function onsubmit(event: SubmitEvent) {
     event.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || clash) return;
     oncreate(name.trim());
     close();
   }
@@ -38,10 +47,11 @@
     <!-- The listener catches Escape from the fields inside, which are interactive. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <form {onsubmit} {onkeydown} {@attach outside(closeIfEmpty)}>
-      <input bind:value={name} aria-label="Category name" placeholder="Name" {@attach focus} />
+      <input bind:value={name} aria-label="Category name" placeholder="Name" aria-invalid={clash !== undefined} {@attach focus} />
+      {#if clash !== undefined}<p class="message" role="alert">There's already a category called “{clash}”</p>{/if}
       <div class="buttons">
         <button type="button" onclick={close}>Cancel</button>
-        <button type="submit" class="primary" disabled={!name.trim()}>Add</button>
+        <button type="submit" class="primary" disabled={!name.trim() || clash !== undefined}>Add</button>
       </div>
     </form>
   {:else}
@@ -87,6 +97,11 @@
   }
   input:focus {
     border-color: var(--accent);
+  }
+  .message {
+    margin: 0;
+    color: var(--danger);
+    font-size: 11px;
   }
   .buttons {
     display: flex;
