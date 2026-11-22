@@ -4,6 +4,7 @@
   import 'emoji-picker-element';
   import { Database, type Picker } from 'emoji-picker-element';
   import dataSource from 'emoji-picker-element-data/en/emojibase/data.json?url';
+  import { outside } from '@/lib/outside';
 
   let {
     onpick,
@@ -19,8 +20,23 @@
   const light = document.documentElement.dataset.theme === 'rose-pine-dawn';
 
   let picker = $state<Picker>();
-  // An emoji with skin tones, waiting for one of them to be picked.
-  let toned = $state<{ name: string; options: string[] } | null>(null);
+  let wrap: HTMLElement;
+  // An emoji with skin tones, waiting for one of them to be picked, and where its popup goes.
+  let toned = $state<{ name: string; options: string[]; top: number; left: number } | null>(null);
+  // The emoji button last clicked, inside the picker. Its click event comes before the
+  // picker's emoji-click, which doesn't say which button it was.
+  let clicked: DOMRect | null = null;
+  const TONES_WIDTH = 6 * 34 + 10;
+  const TONES_HEIGHT = 44;
+
+  // Under the clicked emoji, or above it when there's no room below, kept inside the picker.
+  function place(rect: DOMRect) {
+    const box = wrap.getBoundingClientRect();
+    const left = Math.min(Math.max(rect.left - box.left + rect.width / 2 - TONES_WIDTH / 2, 0), box.width - TONES_WIDTH);
+    const below = rect.bottom - box.top + 4;
+    const top = below + TONES_HEIGHT <= box.height ? below : rect.top - box.top - TONES_HEIGHT - 4;
+    return { top, left };
+  }
 
   const listen = (element: HTMLElement) => {
     picker = element as Picker;
@@ -31,14 +47,30 @@
       style.textContent = '.skintone-button-wrapper { display: none !important; }';
       picker.shadowRoot!.appendChild(style);
     }
+    const onbuttonclick = (event: Event) => {
+      // Emoji buttons are options while searching and menu items otherwise.
+      const button = event.composedPath().find((node) => node instanceof HTMLElement && ['option', 'menuitem'].includes(node.getAttribute('role')!));
+      clicked = button ? (button as HTMLElement).getBoundingClientRect() : null;
+    };
     const onclick = (event: Event) => {
       const { unicode, emoji } = (event as CustomEvent).detail;
       const skins: { unicode: string }[] | undefined = emoji.skins;
-      if (extras && skins?.length) toned = { name: emoji.annotation, options: [emoji.unicode, ...skins.map((skin) => skin.unicode)] };
-      else onpick(unicode);
+      if (extras && skins?.length && clicked) {
+        toned = { name: emoji.annotation, options: [emoji.unicode, ...skins.map((skin) => skin.unicode)], ...place(clicked) };
+      } else {
+        onpick(unicode);
+      }
     };
+    // Scrolling would leave the popup behind its emoji.
+    const onwheel = () => (toned = null);
+    element.addEventListener('click', onbuttonclick, true);
     element.addEventListener('emoji-click', onclick);
-    return () => element.removeEventListener('emoji-click', onclick);
+    element.addEventListener('wheel', onwheel, { passive: true });
+    return () => {
+      element.removeEventListener('click', onbuttonclick, true);
+      element.removeEventListener('emoji-click', onclick);
+      element.removeEventListener('wheel', onwheel);
+    };
   };
 
   // Any emoji but the skin tone swatches, in group 2.
@@ -50,7 +82,7 @@
   }
 </script>
 
-<div class="wrap" class:extras>
+<div class="wrap" class:extras bind:this={wrap}>
   {#if extras}
     <div class="bar">
       <button type="button" onclick={random}>Random</button>
@@ -59,11 +91,26 @@
   {/if}
   <emoji-picker class={light ? 'light' : 'dark'} data-source={dataSource} {@attach listen}></emoji-picker>
   {#if toned}
-    <div class="tones" role="group" aria-label="Skin tone for {toned.name}">
-      {#each toned.options as option (option)}
-        <button type="button" aria-label={option} onclick={() => onpick(option)}>{option}</button>
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div
+      class="tones"
+      role="group"
+      aria-label="Skin tone for {toned.name}"
+      style:top="{toned.top}px"
+      style:left="{toned.left}px"
+      {@attach outside(() => (toned = null))}
+      onkeydown={(event) => {
+        if (event.key === 'Escape') {
+          event.stopPropagation();
+          toned = null;
+        }
+      }}
+    >
+      {#each toned.options as option, i (option)}
+        <button type="button" aria-label={option} onclick={() => onpick(option)} {@attach (button) => void (i === 0 && button.focus())}
+          >{option}</button
+        >
       {/each}
-      <button type="button" class="back" onclick={() => (toned = null)}>Back</button>
     </div>
   {/if}
 </div>
@@ -91,19 +138,17 @@
     background: var(--row-hover);
     color: var(--fg);
   }
-  /* Covers the picker's bottom row, where its recently used emoji are. */
+  /* A small popup under the emoji it's for. */
   .tones {
     position: absolute;
-    right: 1px;
-    bottom: 1px;
-    left: 1px;
+    z-index: 1;
     display: flex;
-    align-items: center;
     gap: 2px;
-    padding: 6px;
-    border-top: 1px solid var(--border);
-    border-radius: 0 0 8px 8px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     background: var(--card);
+    box-shadow: 0 8px 24px #0008;
   }
   .tones button {
     width: 32px;
@@ -113,13 +158,6 @@
   }
   .tones button:hover {
     background: var(--row-hover);
-  }
-  .tones .back {
-    width: auto;
-    margin-left: auto;
-    padding: 0 8px;
-    color: var(--muted);
-    font-size: 12px;
   }
   /* The picker's own variables, set from the theme. */
   emoji-picker {
