@@ -50,7 +50,7 @@
 
 <form {onsubmit} aria-label="Save to workspace">
   {#if already.length > 0}
-    <p class="note">Already in {already.join(', ')}</p>
+    <p class="note" title="Already in {already.join(', ')}">Already in {already.join(', ')}</p>
   {/if}
   <label>
     <span>Title</span>
@@ -86,7 +86,11 @@
     flex-direction: column;
     gap: 10px;
   }
+  /* One line, cut short for long names. Hovering shows it whole. */
   .note {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     margin: 0;
     padding: 6px 10px;
     border-left: 3px solid var(--accent);

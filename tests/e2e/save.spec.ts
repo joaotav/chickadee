@@ -106,3 +106,19 @@ test('opens in the saved theme', async ({ dashboard, popup }) => {
   const page = await popup(gitlab);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dracula');
 });
+
+test('cuts a long category name short in the note and after saving, showing it whole on hover', async ({ dashboard, popup }) => {
+  const long = `A category with a very long name ${'that keeps going '.repeat(6)}`.trim();
+  await addBookmarks(dashboard, [{ title: 'Work', children: [{ title: long, children: [{ title: 'GitLab', url: gitlab.url }] }] }]);
+  const page = await popup(gitlab);
+  const width = (await page.locator('main').boundingBox())!.width;
+  const note = page.getByText(/^Already in/);
+  await expect(note).toHaveAttribute('title', `Already in Work › ${long}`);
+  expect((await note.boundingBox())!.height).toBeLessThan(30);
+  expect((await note.boundingBox())!.width).toBeLessThanOrEqual(width);
+
+  await page.getByRole('button', { name: 'Save anyway' }).click();
+  const place = page.getByRole('status').getByText(/^in Work/);
+  await expect(place).toHaveAttribute('title', `in Work › ${long}`);
+  expect((await place.boundingBox())!.height).toBeLessThan(30);
+});

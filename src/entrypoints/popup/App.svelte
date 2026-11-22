@@ -142,7 +142,7 @@
           <span class="title">{saved.link.title}</span>
         {/if}
       </div>
-      <p class="place">in {saved.place}</p>
+      <p class="place" title="in {saved.place}">in {saved.place}</p>
     </div>
     <div class="buttons">
       <button onclick={() => window.close()}>OK</button>
@@ -269,8 +269,13 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* One line, cut short for long names. Hovering shows it whole. */
   .place {
+    max-width: 100%;
+    overflow: hidden;
     color: var(--muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .countdown {
     position: absolute;
