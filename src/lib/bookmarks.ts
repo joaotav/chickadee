@@ -48,6 +48,14 @@ export async function update(id: string, changes: { title?: string; url?: string
   await browser.bookmarks.update(id, changes);
 }
 
+/** Where a folder or link is, as `move` takes it: its folder, and the item after it if any. */
+export async function position(id: string): Promise<{ parentId: string; before?: string }> {
+  const [node] = await browser.bookmarks.get(id);
+  const siblings = await browser.bookmarks.getChildren(node!.parentId!);
+  const before = siblings[siblings.findIndex((sibling) => sibling.id === id) + 1]?.id;
+  return before === undefined ? { parentId: node!.parentId! } : { parentId: node!.parentId!, before };
+}
+
 /**
  * Moves a folder or link to just before `before`, in whatever folder that is, or to the end
  * of `parentId` when there is no `before`.
