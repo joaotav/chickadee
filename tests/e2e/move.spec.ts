@@ -49,7 +49,8 @@ test('asks before merging into a category of the same name, and Undo puts both b
   // Cancel leaves everything where it was.
   await moveRepos();
   const question = dashboard.getByRole('group', { name: 'Merge Repos' });
-  await expect(question).toContainText('🏠 Home already has “repos”. Merge them?');
+  await expect(question).toContainText('Merge with 🏠 Home › repos?');
+  await expect(question).toContainText('Home already has a category with this name.');
   await question.getByRole('button', { name: 'Cancel' }).click();
   await expect(question).toBeHidden();
   expect(await childTitles(dashboard, ids['💼 Work']!)).toEqual(['Repos', 'Docs']);

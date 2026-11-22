@@ -202,7 +202,8 @@
     const same = space.categories.find((other) => sameName(other.title, category.title));
     if (same) {
       return {
-        question: `${spaceLabel(space)} already has “${same.title}”. Merge them?`,
+        question: `Merge with ${spaceLabel(space)} › ${same.title}?`,
+        detail: `${space.name} already has a category with this name.`,
         merge: () => void mergeCategory(category, same, space),
       };
     }

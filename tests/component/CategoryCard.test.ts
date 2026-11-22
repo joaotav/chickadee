@@ -181,7 +181,7 @@ describe('CategoryCard', () => {
 
   it('asks before merging into a category of the same name in the space it moves to', async () => {
     const merge = vi.fn();
-    const onmove = vi.fn(() => ({ question: '🏠 Home already has “Repos”. Merge them?', merge }));
+    const onmove = vi.fn(() => ({ question: 'Merge with 🏠 Home › Repos?', detail: 'Home already has a category with this name.', merge }));
     const spaces = [{ places: [{ id: 's2', label: '🏠 Home' }] }];
     render(CategoryCard, { ...props, onrename: () => {}, ondelete: () => {}, spaces, onmove });
     const pick = async () => {
@@ -192,7 +192,8 @@ describe('CategoryCard', () => {
     };
 
     let question = await pick();
-    expect(question).toHaveTextContent('🏠 Home already has “Repos”. Merge them?');
+    expect(question).toHaveTextContent('Merge with 🏠 Home › Repos?');
+    expect(question).toHaveTextContent('Home already has a category with this name.');
     expect(screen.getByRole('button', { name: 'Merge' })).toHaveFocus();
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(question).not.toBeInTheDocument();

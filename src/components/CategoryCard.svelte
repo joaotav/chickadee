@@ -52,7 +52,7 @@
      * if the answer is Merge.
      */
     spaces?: PlaceGroup[];
-    onmove?: (spaceId: string) => { question: string; merge: () => void } | undefined;
+    onmove?: (spaceId: string) => { question: string; detail: string; merge: () => void } | undefined;
     /** The categories its links can move to, by space, and moving a link to one. */
     linkPlaces?: PlaceGroup[];
     onmovelinkto?: (link: Link, categoryId: string) => void;
@@ -87,7 +87,8 @@
   // Only web links open, the same as clicking them.
   const urls = $derived(links.filter((link) => link.openable).map((link) => link.url));
   // A question asked on the card before acting, with a button to go ahead and one to cancel.
-  let asking = $state<{ label: string; question: string; answer: string; onanswer: () => void } | null>(null);
+  // One with a detail, saying why it asks, shows as a heading with the detail under it.
+  let asking = $state<{ label: string; question: string; detail?: string; answer: string; onanswer: () => void } | null>(null);
 
   function openAll() {
     if (urls.length > CONFIRM_OVER) {
@@ -99,7 +100,9 @@
 
   function moveTo(spaceId: string) {
     const merging = onmove?.(spaceId);
-    if (merging) asking = { label: `Merge ${title}`, question: merging.question, answer: 'Merge', onanswer: merging.merge };
+    if (merging) {
+      asking = { label: `Merge ${title}`, question: merging.question, detail: merging.detail, answer: 'Merge', onanswer: merging.merge };
+    }
   }
 
   const focus = (button: HTMLButtonElement) => button.focus();
@@ -157,11 +160,12 @@
     {/if}
   </div>
   {#if asking}
-    {@const { label, question, answer, onanswer } = asking}
+    {@const { label, question, detail, answer, onanswer } = asking}
     <!-- The listener catches Escape from the buttons inside, which are interactive. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="confirm"
+      class:detailed={detail}
       role="group"
       aria-label={label}
       {@attach outside(() => (asking = null))}
@@ -172,7 +176,12 @@
         }
       }}
     >
-      <span>{question}</span>
+      {#if detail}
+        <strong>{question}</strong>
+        <span class="detail">{detail}</span>
+      {:else}
+        <span class="question">{question}</span>
+      {/if}
       <span class="answers">
         <button
           class="primary"
@@ -351,23 +360,44 @@
   .add {
     margin-top: var(--row-gap);
   }
-  /* Takes the card's width without widening it. The buttons float at the end of the question's
-     last line, or under it when there's no room. Lines are as tall as the buttons. */
+  /* Takes the card's width without widening it. */
   .confirm {
-    display: flow-root;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     width: 0;
     min-width: 100%;
     margin-top: 8px;
     padding: 6px 6px 6px 10px;
     border: 1px solid var(--accent);
     border-radius: 8px;
-    line-height: 26px;
+  }
+  .confirm .question {
+    flex: 1;
   }
   .confirm .answers {
     display: flex;
-    float: right;
     gap: 6px;
-    margin-left: 6px;
+  }
+  /* A heading and the detail under it, then the buttons on a row of their own. */
+  .confirm.detailed {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 8px 8px 10px;
+    line-height: 1.4;
+  }
+  .confirm.detailed strong {
+    font-weight: 600;
+  }
+  .confirm .detail {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .confirm.detailed .answers {
+    justify-content: flex-end;
+    margin-top: 8px;
   }
   .confirm button {
     width: auto;
