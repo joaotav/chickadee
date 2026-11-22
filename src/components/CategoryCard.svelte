@@ -173,17 +173,19 @@
       }}
     >
       <span>{question}</span>
-      <button
-        class="primary"
-        onclick={() => {
-          onanswer();
-          asking = null;
-        }}
-        {@attach focus}
-      >
-        {answer}
-      </button>
-      <button onclick={() => (asking = null)}>Cancel</button>
+      <span class="answers">
+        <button
+          class="primary"
+          onclick={() => {
+            onanswer();
+            asking = null;
+          }}
+          {@attach focus}
+        >
+          {answer}
+        </button>
+        <button onclick={() => (asking = null)}>Cancel</button>
+      </span>
     </div>
   {/if}
   {#if !collapsed}
@@ -349,24 +351,23 @@
   .add {
     margin-top: var(--row-gap);
   }
-  /* Takes the card's width without widening it. A long question puts the buttons under it. */
+  /* Takes the card's width without widening it. The buttons float at the end of the question's
+     last line, or under it when there's no room. Lines are as tall as the buttons. */
   .confirm {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
+    display: flow-root;
     width: 0;
     min-width: 100%;
     margin-top: 8px;
     padding: 6px 6px 6px 10px;
     border: 1px solid var(--accent);
     border-radius: 8px;
+    line-height: 26px;
   }
-  .confirm span {
-    flex: 1 1 auto;
-  }
-  .confirm .primary {
-    margin-left: auto;
+  .confirm .answers {
+    display: flex;
+    float: right;
+    gap: 6px;
+    margin-left: 6px;
   }
   .confirm button {
     width: auto;
