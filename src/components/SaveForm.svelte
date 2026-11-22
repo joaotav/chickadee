@@ -75,7 +75,8 @@
   </label>
   <div class="buttons">
     <button type="button" onclick={oncancel}>Cancel</button>
-    <button type="submit" class="primary">Save</button>
+    <!-- Saving an already-saved page adds a second copy. -->
+    <button type="submit" class="primary">{already.length > 0 ? 'Save anyway' : 'Save'}</button>
   </div>
 </form>
 

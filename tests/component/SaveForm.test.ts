@@ -49,11 +49,22 @@ describe('SaveForm', () => {
     expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('c1');
   });
 
-  it('says where the page is already saved, following the URL field', async () => {
+  it('says where the page is already saved, and offers to save it anyway, following the URL field', async () => {
     render(SaveForm, props);
     expect(screen.queryByText(/Already in/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
     await fireEvent.input(screen.getByRole('textbox', { name: 'URL' }), { target: { value: 'github.com' } });
     expect(screen.getByText('Already in Work › Repos')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save anyway' })).toBeInTheDocument();
+    await fireEvent.input(screen.getByRole('textbox', { name: 'URL' }), { target: { value: 'gitlab.com' } });
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+  });
+
+  it('saves another copy of an already-saved page', async () => {
+    const onsave = vi.fn();
+    render(SaveForm, { ...props, url: 'https://github.com/', title: 'GitHub', onsave });
+    await fireEvent.click(screen.getByRole('button', { name: 'Save anyway' }));
+    expect(onsave).toHaveBeenCalledWith('c1', 'https://github.com/', 'GitHub');
   });
 
   it('saves to the chosen category, naming an untitled page after its site', async () => {

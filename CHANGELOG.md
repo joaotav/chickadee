@@ -10,6 +10,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - **The card sizing option "Fixed" is now "Fixed width",** to say what stays the same
 - **Search finds links by the name of their space or category too.** Typing "taxes" lists the links in Taxes, after any links whose own title or site matches, and words can be mixed, as in "taxes bank" ([#43](https://github.com/joaotav/chickadee/issues/43))
 - **Search lists up to 50 results instead of 10.** The list shows 10 at a time and scrolls for the rest
+- **The popup's Save button reads "Save anyway" when the page is already saved,** since saving adds a second copy ([#44](https://github.com/joaotav/chickadee/issues/44))
 
 ## 0.2.0 - 2026-11-17
 
