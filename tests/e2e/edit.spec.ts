@@ -25,7 +25,11 @@ test('creates a space with an icon from the + button', async ({ dashboard }) => 
   await dashboard.getByRole('button', { name: 'New space' }).click();
   const form = dashboard.getByRole('form', { name: 'New space' });
   await form.getByRole('textbox', { name: 'Space name' }).fill('Launch');
-  await form.getByRole('radio', { name: '🚀' }).check();
+  await form.getByRole('button', { name: 'Icon' }).click();
+  const picker = form.locator('emoji-picker');
+  await picker.locator('input').fill('rocket');
+  await picker.getByRole('option', { name: /rocket/ }).first().click();
+  await expect(form.getByRole('button', { name: 'Icon 🚀' })).toBeVisible();
   await form.getByRole('button', { name: 'Save' }).click();
 
   await expect(form).toBeHidden();
@@ -33,15 +37,26 @@ test('creates a space with an icon from the + button', async ({ dashboard }) => 
   expect(await childTitles(dashboard, await workspaceId(dashboard))).toEqual(['🚀 Launch']);
 });
 
-test('takes any emoji typed into the space form', async ({ dashboard }) => {
+test('offers the skin tones of an emoji that has them, using only the emoji shipped with the extension', async ({ context, dashboard }) => {
+  const outsideRequests: string[] = [];
+  context.on('request', (request) => {
+    if (!request.url().startsWith('chrome-extension://')) outsideRequests.push(request.url());
+  });
   await dashboard.getByRole('button', { name: 'New space' }).click();
   const form = dashboard.getByRole('form', { name: 'New space' });
-  await form.getByRole('textbox', { name: 'Other emoji' }).fill('🦀');
-  await expect(form.getByRole('radio', { name: '🦀' })).toBeChecked();
-  await form.getByRole('textbox', { name: 'Space name' }).fill('Rust');
+  await form.getByRole('button', { name: 'Icon' }).click();
+  const picker = form.locator('emoji-picker');
+  await picker.locator('input').fill('waving hand');
+  await picker.getByRole('option', { name: /waving hand/ }).first().click();
+  const tones = form.getByRole('group', { name: /Skin tone for waving hand/ });
+  await expect(tones.getByRole('button')).toHaveText(['👋', '👋🏻', '👋🏼', '👋🏽', '👋🏾', '👋🏿']);
+  await tones.getByRole('button', { name: '👋🏽' }).click();
+  await expect(picker).toHaveCount(0);
+  await form.getByRole('textbox', { name: 'Space name' }).fill('Hello');
   await form.getByRole('textbox', { name: 'Space name' }).press('Enter');
-  await expect(dashboard.getByRole('tab', { name: /Rust/ })).toBeVisible();
-  expect(await childTitles(dashboard, await workspaceId(dashboard))).toEqual(['🦀 Rust']);
+  await expect(dashboard.getByRole('tab', { name: /Hello/ })).toBeVisible();
+  expect(await childTitles(dashboard, await workspaceId(dashboard))).toEqual(['👋🏽 Hello']);
+  expect(outsideRequests).toEqual([]);
 });
 
 test('renames a space and changes its icon, or cancels with Escape', async ({ dashboard }) => {
@@ -54,7 +69,7 @@ test('renames a space and changes its icon, or cancels with Escape', async ({ da
   await dashboard.getByRole('button', { name: 'Rename' }).click();
   const form = dashboard.getByRole('form', { name: 'Rename space' });
   await expect(form.getByRole('textbox', { name: 'Space name' })).toHaveValue('Work');
-  await expect(form.getByRole('radio', { name: '💼' })).toBeChecked();
+  await expect(form.getByRole('button', { name: 'Icon 💼' })).toBeVisible();
   await form.getByRole('textbox', { name: 'Space name' }).fill('Job');
   await dashboard.keyboard.press('Escape');
   await expect(form).toBeHidden();
@@ -63,7 +78,8 @@ test('renames a space and changes its icon, or cancels with Escape', async ({ da
   await dashboard.getByRole('button', { name: 'Actions for space Work' }).click();
   await dashboard.getByRole('button', { name: 'Rename' }).click();
   await form.getByRole('textbox', { name: 'Space name' }).fill('Job');
-  await form.getByRole('radio', { name: 'No icon' }).check();
+  await form.getByRole('button', { name: 'Icon 💼' }).click();
+  await form.getByRole('button', { name: 'No icon' }).click();
   await form.getByRole('button', { name: 'Save' }).click();
   await expect(dashboard.getByRole('tab', { name: 'Job' })).toBeVisible();
   expect((await bookmark(dashboard, ids['💼 Work']!)).title).toBe('Job');

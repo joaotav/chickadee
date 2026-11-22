@@ -11,6 +11,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ### Improvements
 
+- **Pick a space's icon from every emoji,** with search and categories, from a button inside the name field of **New space** and **Rename space**. An emoji with skin tones offers them when you pick it, and **Random** picks one for you. The emoji are part of the extension, so nothing is downloaded ([#64](https://github.com/joaotav/chickadee/issues/64))
 - **Drag a bookmark from anywhere on it,** as with categories, instead of by a grip over its icon. A click still opens it. With the keyboard, Tab to a bookmark's grip, now shown as an outline around it, and Space picks it up as before ([#72](https://github.com/joaotav/chickadee/issues/72))
 - **The card sizing option "Fixed" is now "Fixed width",** to say what stays the same
 - **Search finds links by the name of their space or category too.** Typing "taxes" lists the links in Taxes, after any links whose own title or site matches, and words can be mixed, as in "taxes bank" ([#43](https://github.com/joaotav/chickadee/issues/43))

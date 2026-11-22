@@ -2,6 +2,7 @@
   import { untrack } from 'svelte';
   import { outside } from '@/lib/outside';
   import { splitEmoji } from '@/lib/tree';
+  import EmojiPicker from './EmojiPicker.svelte';
 
   let {
     heading,
@@ -17,15 +18,9 @@
     oncancel: () => void;
   } = $props();
 
-  const EMOJI = [
-    '💼', '🏠', '🔬', '🛠️', '📚', '🎓', '💡', '🎨', '🎵', '🎮',
-    '📈', '💰', '🛒', '✈️', '🍳', '🏃', '❤️', '🌱', '📰', '🗂️',
-    '📌', '⭐', '🔥', '🚀', '🧪', '💻', '📝', '📅', '🎬', '🌍',
-  ];
-
   let chosen = $state(untrack(() => emoji));
   let text = $state(untrack(() => name));
-  let custom = $state('');
+  let picking = $state(false);
 
   const focus = (input: HTMLInputElement) => input.focus();
 
@@ -34,11 +29,9 @@
     if (text === name && chosen === emoji) oncancel();
   }
 
-  // Any emoji can be typed or pasted into the "Other" field. Only its first emoji is kept.
-  function onCustomInput() {
-    const typed = splitEmoji(custom.trim()).emoji;
-    if (typed) chosen = typed;
-    custom = '';
+  function pick(emoji: string | null) {
+    chosen = emoji;
+    picking = false;
   }
 
   function onsubmit(event: SubmitEvent) {
@@ -49,11 +42,12 @@
     onsave(split.emoji ?? chosen, split.name);
   }
 
+  // Escape closes the picker if it's open, and otherwise the form.
   function onkeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      oncancel();
-    }
+    if (event.key !== 'Escape') return;
+    event.stopPropagation();
+    if (picking) picking = false;
+    else oncancel();
   }
 </script>
 
@@ -61,29 +55,36 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form class="space-form" aria-label={heading} {onsubmit} {onkeydown} {@attach outside(closeIfUnchanged)}>
   <h2>{heading}</h2>
-  <input class="name" bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
-  <fieldset>
-    <legend>Icon</legend>
-    <div class="grid">
-      <label class="none" title="No icon">
-        <input type="radio" name="emoji" checked={chosen === null} onchange={() => (chosen = null)} />
-        <span aria-hidden="true">∅</span><span class="visually-hidden">No icon</span>
-      </label>
-      {#each EMOJI as option (option)}
-        <label>
-          <input type="radio" name="emoji" checked={chosen === option} onchange={() => (chosen = option)} />
-          {option}
-        </label>
-      {/each}
-      {#if chosen !== null && !EMOJI.includes(chosen)}
-        <label>
-          <input type="radio" name="emoji" checked onchange={() => {}} />
+  <!-- The icon button and the name share one field. The picker opens over the form under it. -->
+  <div class="field-wrap" {@attach outside(() => (picking = false))}>
+    <div class="field">
+      <button
+        type="button"
+        class="icon"
+        aria-label={chosen ? `Icon ${chosen}` : 'Icon'}
+        aria-expanded={picking}
+        onclick={() => (picking = !picking)}
+      >
+        {#if chosen}
           {chosen}
-        </label>
-      {/if}
+        {:else}
+          <!-- A plain smiley: no icon yet. -->
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.2" />
+            <path d="M5.6 9.6c.6.9 1.4 1.3 2.4 1.3s1.8-.4 2.4-1.3" />
+            <circle class="eye" cx="6" cy="6.6" r=".5" />
+            <circle class="eye" cx="10" cy="6.6" r=".5" />
+          </svg>
+        {/if}
+      </button>
+      <input bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
     </div>
-    <input class="custom" bind:value={custom} oninput={onCustomInput} aria-label="Other emoji" placeholder="Or type or paste any emoji" />
-  </fieldset>
+    {#if picking}
+      <div class="popover">
+        <EmojiPicker onpick={pick} />
+      </div>
+    {/if}
+  </div>
   <div class="buttons">
     <button type="button" onclick={oncancel}>Cancel</button>
     <button type="submit" class="primary" disabled={!splitEmoji(text.trim()).name}>Save</button>
@@ -107,85 +108,66 @@
     font-size: 13px;
     font-weight: 600;
   }
-  .name,
-  .custom {
-    width: 100%;
-    height: 30px;
-    padding: 0 8px;
+  .field-wrap {
+    position: relative;
+  }
+  .field {
+    display: flex;
+    height: 32px;
     border: 1px solid var(--border);
     border-radius: 6px;
-    outline: none;
     background: var(--bg);
+  }
+  .field:focus-within {
+    border-color: var(--accent);
+  }
+  .icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 34px;
+    border-right: 1px solid var(--border);
+    border-radius: 5px 0 0 5px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+  .icon:hover,
+  .icon[aria-expanded='true'] {
+    background: var(--row);
+    color: var(--accent);
+  }
+  .icon svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.3;
+    stroke-linecap: round;
+  }
+  .icon .eye {
+    fill: currentColor;
+  }
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 0 10px;
+    border: 0;
+    outline: none;
+    background: none;
     color: var(--fg);
     font: inherit;
   }
-  .name:focus,
-  .custom:focus {
-    border-color: var(--accent);
-  }
-  fieldset {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-  legend {
-    margin-bottom: 6px;
-    padding: 0;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 4px;
-  }
-  /* Each option is a square. The radio button is invisible and covers it, so it gets the clicks and the focus. */
-  .grid label {
-    position: relative;
-    display: grid;
-    place-items: center;
-    height: 32px;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    font-size: 17px;
-    cursor: pointer;
-  }
-  .grid label:hover {
-    background: var(--row);
-  }
-  .grid label:has(:checked) {
-    border-color: var(--accent);
-    background: var(--row);
-  }
-  .grid label:has(:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-  .grid input {
+  .popover {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .none {
-    color: var(--muted);
-  }
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    z-index: 5;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    box-shadow: 0 12px 32px #0008;
   }
   .buttons {
     display: flex;
