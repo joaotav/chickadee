@@ -6,6 +6,7 @@ export const VARIANTS = {
   b: { name: 'Check badge', hint: 'A large check, "Saved", and where it went' },
   c: { name: 'Bookmark card', hint: 'The saved bookmark as it looks on the new tab page, and where it went' },
   d: { name: 'Both', hint: 'The check badge above the bookmark card' },
+  e: { name: 'Both, no check', hint: 'D without the check badge' },
 } as const;
 
 export type Variant = keyof typeof VARIANTS;

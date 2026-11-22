@@ -106,6 +106,8 @@
       <div class="done" class:left={proto.variant === 'c'} role="status">
         {#if proto.variant === 'c'}
           <p class="heading"><span class="tick" aria-hidden="true">✓</span> Saved</p>
+        {:else if proto.variant === 'e'}
+          <p class="heading">Saved</p>
         {:else}
           <div class="badge" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9" /></svg>
