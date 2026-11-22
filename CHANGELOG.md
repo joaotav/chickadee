@@ -4,6 +4,10 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ## Unreleased
 
+### Improvements
+
+- **Edit a bookmark's title and URL in one form,** from **Edit bookmark** in its **⋯** menu, which replaces **Rename** and **Edit URL**. The form is the same as **+ Add bookmark** ([#82](https://github.com/joaotav/chickadee/issues/82))
+
 ## 0.3.0 - 2026-11-22
 
 Save all your open tabs as a session, move categories and bookmarks to another space, find links by the name of their space or category, and pick any emoji as a space's icon.

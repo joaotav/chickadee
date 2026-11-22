@@ -118,7 +118,7 @@ test('refuses to add an address that is not a web page', async ({ dashboard }) =
   await expect(dashboard.getByRole('link')).toHaveCount(0);
 });
 
-test('renames categories and links inline, and the bookmark manager shows it', async ({ dashboard }) => {
+test('renames a category inline, and the bookmark manager shows it', async ({ dashboard }) => {
   const ids = await addBookmarks(dashboard, sample);
   await dashboard.getByRole('button', { name: 'Actions for Repos' }).click();
   await dashboard.getByRole('button', { name: 'Rename' }).click();
@@ -126,47 +126,45 @@ test('renames categories and links inline, and the bookmark manager shows it', a
   await dashboard.keyboard.press('Enter');
   await expect(dashboard.getByRole('heading', { name: /^Code/ })).toBeVisible();
   expect((await bookmark(dashboard, ids['Repos']!)).title).toBe('Code');
-
-  await dashboard.getByRole('link', { name: 'GitHub' }).hover();
-  await dashboard.getByRole('button', { name: 'Actions for GitHub' }).click();
-  await dashboard.getByRole('button', { name: 'Rename' }).click();
-  await dashboard.getByRole('textbox', { name: 'Title' }).fill('GitHub home');
-  await dashboard.keyboard.press('Enter');
-  await expect(dashboard.getByRole('link', { name: 'GitHub home' })).toBeVisible();
-  expect((await bookmark(dashboard, ids['GitHub']!)).title).toBe('GitHub home');
 });
 
-test('a link renamed to nothing goes back to its default title', async ({ dashboard }) => {
+/** Opens a link's Edit bookmark form from its ⋯ menu. */
+async function editBookmark(page: Page, title: string) {
+  await page.getByRole('button', { name: `Actions for ${title}` }).click();
+  await page.getByRole('button', { name: 'Edit bookmark' }).click();
+}
+
+test('edits a link\'s title and URL in one go, and the bookmark manager shows it', async ({ dashboard }) => {
   const ids = await addBookmarks(dashboard, sample);
-  await dashboard.getByRole('button', { name: 'Actions for GitHub' }).click();
-  await dashboard.getByRole('button', { name: 'Rename' }).click();
+  await editBookmark(dashboard, 'GitHub');
+  await expect(dashboard.getByRole('textbox', { name: 'URL' })).toHaveValue('https://github.com/');
+  await expect(dashboard.getByRole('textbox', { name: 'Title' })).toHaveValue('GitHub');
+  await dashboard.getByRole('textbox', { name: 'URL' }).fill('github.com/sveltejs');
+  await dashboard.getByRole('textbox', { name: 'Title' }).fill('Svelte on GitHub');
+  await dashboard.getByRole('button', { name: 'Save' }).click();
+  await expect(dashboard.getByRole('link', { name: 'Svelte on GitHub' })).toHaveAttribute('href', 'https://github.com/sveltejs');
+  expect(await bookmark(dashboard, ids['GitHub']!)).toMatchObject({ title: 'Svelte on GitHub', url: 'https://github.com/sveltejs' });
+});
+
+test('a link whose title is cleared goes back to its default title', async ({ dashboard }) => {
+  const ids = await addBookmarks(dashboard, sample);
+  await editBookmark(dashboard, 'GitHub');
   await dashboard.getByRole('textbox', { name: 'Title' }).clear();
   await dashboard.keyboard.press('Enter');
   await expect(dashboard.getByRole('link', { name: 'github.com' })).toBeVisible();
   expect((await bookmark(dashboard, ids['GitHub']!)).title).toBe('github.com');
 });
 
-test('edits a link\'s URL, and Escape leaves it unchanged', async ({ dashboard }) => {
+test('refuses an address that is not a web page, and Escape leaves the link unchanged', async ({ dashboard }) => {
   const ids = await addBookmarks(dashboard, sample);
-  const editUrl = async () => {
-    await dashboard.getByRole('button', { name: 'Actions for GitHub' }).click();
-    await dashboard.getByRole('button', { name: 'Edit URL' }).click();
-    return dashboard.getByRole('textbox', { name: 'URL' });
-  };
-
-  const field = await editUrl();
-  await expect(field).toHaveValue('https://github.com/');
-  await field.fill('https://example.org/');
-  await field.press('Escape');
-  await expect(dashboard.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/');
-
-  await (await editUrl()).fill('mailto:me@example.com');
+  await editBookmark(dashboard, 'GitHub');
+  await dashboard.getByRole('textbox', { name: 'URL' }).fill('mailto:me@example.com');
   await dashboard.keyboard.press('Enter');
   await expect(dashboard.getByText('Enter a web address, like example.com')).toHaveRole('alert');
-  await dashboard.getByRole('textbox', { name: 'URL' }).fill('github.com/sveltejs');
-  await dashboard.keyboard.press('Enter');
-  await expect(dashboard.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/sveltejs');
-  expect((await bookmark(dashboard, ids['GitHub']!)).url).toBe('https://github.com/sveltejs');
+  await dashboard.keyboard.press('Escape');
+  await expect(dashboard.getByRole('textbox', { name: 'URL' })).toBeHidden();
+  await expect(dashboard.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/');
+  expect((await bookmark(dashboard, ids['GitHub']!)).url).toBe('https://github.com/');
 });
 
 test('the Unsorted card and tab cannot be renamed', async ({ dashboard }) => {

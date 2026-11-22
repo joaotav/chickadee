@@ -58,14 +58,4 @@ describe('InlineInput', () => {
     expect(field).toHaveAttribute('aria-invalid', 'true');
     expect(cancel).not.toHaveBeenCalled();
   });
-
-  it('saves an empty field when allowed, for fields with a default', async () => {
-    const save = vi.fn();
-    render(InlineInput, { value: 'GitHub', label: 'Title', placeholder: 'github.com', allowEmpty: true, onsave: save, oncancel: () => {} });
-    const field = screen.getByRole('textbox', { name: 'Title' });
-    expect(field).toHaveAttribute('placeholder', 'github.com');
-    await fireEvent.input(field, { target: { value: '  ' } });
-    await fireEvent.keyDown(field, { key: 'Enter' });
-    expect(save).toHaveBeenCalledWith('');
-  });
 });

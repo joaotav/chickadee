@@ -83,7 +83,7 @@ test('a click still opens a link, and its ⋯ button opens the menu instead of d
   await addBookmarks(dashboard, sample);
   await link(dashboard, 'GitHub').hover();
   await dashboard.getByRole('button', { name: 'Actions for GitHub' }).click();
-  await expect(dashboard.getByRole('button', { name: 'Rename' })).toBeVisible();
+  await expect(dashboard.getByRole('button', { name: 'Edit bookmark' })).toBeVisible();
   await dashboard.keyboard.press('Escape');
 
   await link(dashboard, 'GitLab').click();

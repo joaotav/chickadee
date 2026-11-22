@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { defaultTitle, toWebUrl, type Link } from '@/lib/tree';
+  import { defaultTitle, type Link } from '@/lib/tree';
   import Grip from './Grip.svelte';
-  import InlineInput from './InlineInput.svelte';
+  import LinkForm from './LinkForm.svelte';
   import LinkIcon from './LinkIcon.svelte';
   import Menu, { type PlaceGroup } from './Menu.svelte';
 
@@ -13,7 +13,7 @@
     onmove,
   }: {
     link: Link;
-    /** Renames the link or changes its URL. Without it, the link can't be edited. */
+    /** Changes the link's title, URL or both. Without it, the link can't be edited. */
     onupdate?: (changes: { title?: string; url?: string }) => void;
     ondelete?: () => void;
     /** The categories the link can move to, by space, and moving it to one. */
@@ -21,13 +21,14 @@
     onmove?: (categoryId: string) => void;
   } = $props();
 
-  let editing = $state<'title' | 'url' | null>(null);
+  let editing = $state(false);
 
-  function saveUrl(text: string) {
-    const url = toWebUrl(text);
-    if (!url) return 'Enter a web address, like example.com';
-    onupdate?.({ url });
-    editing = null;
+  function save(url: string, title: string) {
+    // An empty title goes back to the default, the same as adding a link without one.
+    const newTitle = title || defaultTitle(url);
+    const changes = { ...(url !== link.url && { url }), ...(newTitle !== link.title && { title: newTitle }) };
+    if (Object.keys(changes).length > 0) onupdate?.(changes);
+    editing = false;
   }
 
   let row: HTMLElement;
@@ -52,21 +53,8 @@
 {/snippet}
 
 <div class="row" bind:this={row}>
-  {#if editing === 'title'}
-    <!-- An empty title goes back to the default, the same as adding a link without one. -->
-    <InlineInput
-      value={link.title}
-      label="Title"
-      placeholder={defaultTitle(link.url)}
-      allowEmpty
-      onsave={(title) => {
-        onupdate?.({ title: title || defaultTitle(link.url) });
-        editing = null;
-      }}
-      oncancel={() => (editing = null)}
-    />
-  {:else if editing === 'url'}
-    <InlineInput value={link.url} label="URL" onsave={saveUrl} oncancel={() => (editing = null)} />
+  {#if editing}
+    <LinkForm url={link.url} title={link.title} submit="Save" onsave={save} oncancel={() => (editing = false)} />
   {:else if link.openable}
     <a class="link" href={link.url} title={`${link.title}\n${link.url}`} onmousedown={dragFromLink}>{@render content()}</a>
   {:else}
@@ -86,8 +74,7 @@
     <Menu
       label="Actions for {link.title}"
       items={[
-        { label: 'Rename', onselect: () => (editing = 'title') },
-        { label: 'Edit URL', onselect: () => (editing = 'url') },
+        { label: 'Edit bookmark', onselect: () => (editing = true) },
         ...(onmove && places.length > 0 ? [{ label: 'Move to…', places: { groups: places, onpick: onmove } }] : []),
         ...(ondelete ? [{ label: 'Delete', onselect: ondelete, danger: true }] : []),
       ]}
