@@ -7,6 +7,7 @@
   import NewCategory from '@/components/NewCategory.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
+  import { readFile, toHtml, type BookmarksFile } from '@/lib/bookmarks-file';
   import SpaceForm from '@/components/SpaceForm.svelte';
   import SpaceTabs from '@/components/SpaceTabs.svelte';
   import Toast from '@/components/Toast.svelte';
@@ -16,6 +17,8 @@
   import { getActiveSpaceId, getCollapsed, getIcons, setActiveSpaceId, setCollapsed, watchCollapsed, watchIcons } from '@/lib/meta';
   import { cacheSettings, getCachedSettings, getSettings, setSettings, watchSettings, type Settings } from '@/lib/settings';
   import { defaultTitle, joinEmoji, sameName, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
+  import { pickFile, saveFile } from '@/lib/files';
+  import { importFile, takenSpaces, undoImport } from '@/lib/import';
   import { openInBackground } from '@/lib/tabs';
   import { merge, remove, restore, unmerge, type Merged } from '@/lib/undo';
 
@@ -230,6 +233,49 @@
     void moveTo(link.id, categoryId, `Moved “${link.title}” to ${spaceLabel(space)} › ${category.title}`);
   }
 
+  const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+  // Named after the day, like chickadee-bookmarks-2026-11-22.html.
+  async function exportFile() {
+    saveFile(`chickadee-bookmarks-${new Date().toLocaleDateString('en-CA')}.html`, toHtml(await getWorkspace()));
+  }
+
+  // Imports a bookmarks file. When spaces in it are already here, returns the question to
+  // ask first, and the import to run with the answer.
+  function startImport(html: string) {
+    const file = readFile(html);
+    const taken = takenSpaces(file, realSpaces.map((space) => space.name));
+    if (taken.length > 0) return { taken, run: (mode: 'merge' | 'separate') => void runImport(file, mode) };
+    void runImport(file, 'merge');
+  }
+
+  async function importFromEmptyPage() {
+    const html = await pickFile();
+    if (html !== null) startImport(html)?.run('merge');
+  }
+
+  async function runImport(file: BookmarksFile, mode: 'merge' | 'separate') {
+    if (file.spaces.length === 0 && file.loose.length === 0) {
+      toast = { message: 'No bookmarks found in this file' };
+      return;
+    }
+    const result = await importFile(file, await getWorkspace(), mode);
+    if (result.created.length === 0) {
+      toast = { message: result.skipped > 0 ? "Couldn't add the bookmarks in this file" : 'Everything in this file is already here' };
+      return;
+    }
+    await load();
+    select(result.spaces[0]!);
+    const refused = result.skipped > 0 ? `. ${plural(result.skipped, 'bookmark')} that ${result.skipped === 1 ? "isn't a web page was" : "aren't web pages were"} left out` : '';
+    toast = {
+      message: `Imported ${plural(result.links, 'bookmark')} in ${plural(result.spaces.length, 'space')}${refused}`,
+      undo: () => {
+        toast = null;
+        void undoImport(result.created);
+      },
+    };
+  }
+
   function saveCollapsed(ids: string[]) {
     collapsed = ids;
     void setCollapsed(ids);
@@ -320,7 +366,7 @@
     {#if spaces && spaces.length > 0}
       <SearchBox {spaces} onopen={(url, background) => (background ? void openInBackground([url]) : location.assign(url))} />
     {/if}
-    <SettingsPanel {settings} onchange={saveSettings} />
+    <SettingsPanel {settings} onchange={saveSettings} onexport={() => void exportFile()} onimport={startImport} />
   </div>
 </header>
 
@@ -336,6 +382,8 @@
         Create a space with the <strong>+</strong> button above, or add a folder inside
         <strong>Other Bookmarks › Workspace</strong> in your browser's bookmarks.
       </p>
+      <p>Or bring in links from another browser or tool:</p>
+      <button class="import" onclick={() => void importFromEmptyPage()}>Import bookmarks…</button>
     </div>
   {:else if active}
     <div
@@ -502,5 +550,15 @@
   }
   .notice strong {
     color: var(--fg);
+  }
+  .notice .import {
+    padding: 6px 14px;
+    border-radius: 7px;
+    background: var(--accent-fill);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .notice .import:hover {
+    filter: brightness(1.1);
   }
 </style>

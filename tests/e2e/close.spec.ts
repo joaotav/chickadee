@@ -17,13 +17,13 @@ test('opening something else closes the new space form, unless a name has been t
   await dashboard.getByRole('button', { name: 'New space' }).click();
   await dashboard.getByRole('button', { name: 'Settings' }).click();
   await expect(form).toBeHidden();
-  await expect(dashboard.getByRole('dialog', { name: 'Display settings' })).toBeVisible();
+  await expect(dashboard.getByRole('dialog', { name: 'Settings' })).toBeVisible();
 
   await dashboard.getByRole('button', { name: 'New space' }).click();
-  await expect(dashboard.getByRole('dialog', { name: 'Display settings' })).toBeHidden();
+  await expect(dashboard.getByRole('dialog', { name: 'Settings' })).toBeHidden();
   await form.getByRole('textbox', { name: 'Space name' }).fill('Launch');
   await dashboard.getByRole('button', { name: 'Settings' }).click();
-  await expect(dashboard.getByRole('dialog', { name: 'Display settings' })).toBeVisible();
+  await expect(dashboard.getByRole('dialog', { name: 'Settings' })).toBeVisible();
   await expect(form).toBeVisible();
   await expect(form.getByRole('textbox', { name: 'Space name' })).toHaveValue('Launch');
 });

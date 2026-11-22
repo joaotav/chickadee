@@ -40,6 +40,8 @@ Other Bookmarks
 
 The extension creates the `Workspace` folder on first use. An emoji at the start of a space's folder name becomes its tab icon.
 
+To back up your spaces or move them to another browser, use **Export** and **Import…** in the settings panel (⚙). Import also reads the bookmarks file that browsers and most bookmark tools export.
+
 ## Development
 
 You need Node.js 22 and npm, plus Firefox, Chrome or both.
