@@ -38,6 +38,9 @@ export default defineConfig({
     name: 'Chickadee',
     description: 'New tab page with the links you are working on, organized into spaces and categories.',
     permissions: ['bookmarks', 'storage', 'activeTab', ...(browser === 'chrome' ? ['favicon'] : [])],
+    // Asked for the first time all tabs are saved as a session, since browsers describe it as
+    // access to browsing history.
+    optional_permissions: ['tabs'],
     ...(browser === 'chrome' && { key: chromeKey }),
     ...(browser === 'firefox' && {
       browser_specific_settings: {
