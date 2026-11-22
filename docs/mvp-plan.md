@@ -314,6 +314,7 @@ Verify: move a link down within its own category, then up, then into another cat
 - Toolbar popup reads the active tab, shows an editable title and a category picker with entries like "Work › Repos", and saves. The last used category is preselected.
 - On Firefox, store `tab.favIconUrl` as `icon:<newId>` when it's `https:` or `data:`.
 - If the URL is already in `Workspace`, the popup says which category it's in, and its Save button reads "Save anyway", since saving adds a second copy (#44).
+- After saving, the popup shows "Saved", the bookmark as it looks on the new tab page, and where it went, like "in 💼 Work › Repos". It closes after 4 seconds, with a line along the bottom counting down, or at once with OK (#78).
 
 Verify: save a page from each browser. It appears on an open new tab. On Firefox, it shows the site's icon.
 

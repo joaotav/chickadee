@@ -27,10 +27,24 @@ test('saves the current page into a category, and an open new tab shows it', asy
   await page.getByRole('textbox', { name: 'Title' }).fill('GitLab');
   await page.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Docs' });
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByRole('status')).toHaveText(/Saved to Work › Docs/);
+  await expect(page.getByRole('status')).toHaveText('Saved GitLab in 💼 Work › Docs');
 
   expect(await childTitles(dashboard, ids['Docs']!)).toEqual(['GitLab']);
   await expect(dashboard.getByRole('list', { name: 'Links in Docs' }).getByRole('link', { name: 'GitLab' })).toBeVisible();
+});
+
+test('a line along the bottom counts down, pausing while the pointer is over the popup', async ({ dashboard, popup }) => {
+  await addBookmarks(dashboard, sample);
+  const page = await popup(gitlab);
+  // Moving over the form doesn't count: the line starts running once the page is saved.
+  await page.mouse.move(100, 40);
+  await page.mouse.move(110, 50);
+  await page.getByRole('textbox', { name: 'Title' }).press('Enter');
+  const line = page.locator('.countdown');
+  const state = () => line.evaluate((element) => getComputedStyle(element).animationPlayState);
+  await expect.poll(state).toBe('running');
+  await page.mouse.move(120, 40);
+  await expect.poll(state).toBe('paused');
 });
 
 test('closes after 4 seconds once saved, or at once with OK', async ({ dashboard, popup }) => {
@@ -39,7 +53,7 @@ test('closes after 4 seconds once saved, or at once with OK', async ({ dashboard
   await page.clock.install();
   // Clicking Save leaves the pointer resting on the popup, which mustn't hold it open.
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByRole('status')).toHaveText(/Saved to Work › Repos/);
+  await expect(page.getByRole('status')).toHaveText(/in 💼 Work › Repos/);
   await expect(page.getByRole('heading', { name: 'Save to workspace' })).toHaveCount(0);
   await page.clock.runFor(3900);
   expect(page.isClosed()).toBe(false);
@@ -60,13 +74,13 @@ test('opens on the last used category, and says where a page is already saved', 
   const first = await popup(gitlab);
   await first.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Media' });
   await first.getByRole('button', { name: 'Save' }).click();
-  await expect(first.getByRole('status')).toHaveText(/Saved to Home › Media/);
+  await expect(first.getByRole('status')).toHaveText(/in Home › Media/);
 
   const second = await popup({ url: 'https://github.com/', title: 'GitHub' });
   await expect(second.getByRole('combobox', { name: 'Category' }).locator('option:checked')).toHaveText('Media');
   await expect(second.getByText('Already in Work › Repos')).toBeVisible();
   await second.getByRole('button', { name: 'Save anyway' }).click();
-  await expect(second.getByRole('status')).toHaveText(/Saved to Home › Media/);
+  await expect(second.getByRole('status')).toHaveText(/in Home › Media/);
 });
 
 test('only offers to save web pages', async ({ dashboard, popup }) => {

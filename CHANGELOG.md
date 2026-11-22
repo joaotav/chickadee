@@ -11,6 +11,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - **Search finds links by the name of their space or category too.** Typing "taxes" lists the links in Taxes, after any links whose own title or site matches, and words can be mixed, as in "taxes bank" ([#43](https://github.com/joaotav/chickadee/issues/43))
 - **Search lists up to 50 results instead of 10.** The list shows 10 at a time and scrolls for the rest
 - **The popup's Save button reads "Save anyway" when the page is already saved,** since saving adds a second copy ([#44](https://github.com/joaotav/chickadee/issues/44))
+- **The popup's message after saving shows the bookmark and where it went,** with the space's icon, and a line along the bottom counts down until the popup closes ([#78](https://github.com/joaotav/chickadee/issues/78))
 
 ## 0.2.0 - 2026-11-17
 
