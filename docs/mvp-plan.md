@@ -36,8 +36,9 @@ These are listed under [After the MVP](#after-the-mvp) and the design shouldn't 
 | [0002](adr/0002-wxt-mv3-cross-browser.md) | Manifest V3 built with WXT for Firefox and Chrome | accepted |
 | [0003](adr/0003-svelte-ui.md) | Svelte 5 for the UI | accepted |
 | [0004](adr/0004-metadata-in-storage-local.md) | UI metadata lives in `storage.local`, keyed by bookmark ID | accepted |
-| [0005](adr/0005-json-export-import.md) | JSON export/import to move between browsers | accepted, after the MVP |
+| [0005](adr/0005-json-export-import.md) | JSON export/import to move between browsers | superseded by 0007 |
 | [0006](adr/0006-display-settings-in-storage-sync.md) | Display settings live in `storage.sync` | accepted |
+| [0007](adr/0007-bookmarks-html-export-import.md) | Export and import as a bookmarks HTML file | accepted |
 
 The rest of this plan assumes the proposed decisions and changes if any of them do.
 
@@ -287,6 +288,7 @@ Verify: collapse a category, open a new tab, it's still collapsed. A collapsed s
 - Gear button in the top bar opens a settings panel with theme, density, titles and card sizing, as listed under [Display settings](#display-settings). Layout shows Grid only until Board and Masonry exist.
 - Themes are sets of CSS custom properties selected by a `data-theme` attribute. Density, titles and sizing work the same way.
 - Read and write `settings` in `storage.sync`, and apply changes from `storage.onChanged` so other open tabs update.
+- A Bookmarks section in the panel exports and imports the Workspace as a bookmarks HTML file, and the empty page offers the import too (#41, ADR 0007).
 
 Verify: change every setting, open a new tab, the choices stuck. On a second computer signed in to the same account, with Add-ons sync on, the settings arrive after a "Sync Now".
 
@@ -359,6 +361,6 @@ Roughly in priority order:
 5. Save all tabs in the window as a new category. Needs the `tabs` permission.
 6. Keyboard shortcut to open the popup through the `commands` API.
 7. Collapse state and colors that follow you across devices, keyed by folder path in `storage.sync`.
-8. JSON export and import of the workspace with its collapse state, as described in ADR 0005.
+8. Export and import of the workspace as a bookmarks HTML file, as described in ADR 0007 (#41).
 9. Board layout, with fit content and fixed sizing.
 10. Masonry layout, always fixed sizing. Drop it if dragging cards feels unpredictable.
