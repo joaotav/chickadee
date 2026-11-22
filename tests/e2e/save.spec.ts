@@ -54,7 +54,7 @@ test('closes after 4 seconds once saved, or at once with OK', async ({ dashboard
   // Clicking Save leaves the pointer resting on the popup, which mustn't hold it open.
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByRole('status')).toHaveText(/in 💼 Work › Repos/);
-  await expect(page.getByRole('heading', { name: 'Save to workspace' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'This page' })).toHaveCount(0);
   await page.clock.runFor(3900);
   expect(page.isClosed()).toBe(false);
   const closed = page.waitForEvent('close');
@@ -83,9 +83,12 @@ test('opens on the last used category, and says where a page is already saved', 
   await expect(second.getByRole('status')).toHaveText(/in Home › Media/);
 });
 
-test('only offers to save web pages', async ({ dashboard, popup }) => {
+test('only offers to save web pages, starting on all tabs for other pages', async ({ dashboard, popup }) => {
   await addBookmarks(dashboard, sample);
   const page = await popup({ url: 'chrome://settings/', title: 'Settings' });
+  await expect(page.getByRole('button', { name: 'All tabs' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('form', { name: 'Save all tabs' })).toBeVisible();
+  await page.getByRole('button', { name: 'This page' }).click();
   await expect(page.getByText('Only web pages can be saved.')).toBeVisible();
   await expect(page.getByRole('form')).toHaveCount(0);
 });

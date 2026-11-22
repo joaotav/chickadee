@@ -6,6 +6,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ### Features
 
+- **Save all the tabs in a window as a new category,** from **All tabs** at the top of the toolbar popup, to close a working session and reopen it later with **Open all bookmarks**. Pinned tabs and pages that aren't web pages are left out. The first time, Chickadee asks for permission to read your tabs ([#35](https://github.com/joaotav/chickadee/issues/35))
 - **Move a category to another space, or a bookmark to a category in any space,** with **Move to…** in its **⋯** menu. The list of places has a search field, and **Undo** puts it back ([#59](https://github.com/joaotav/chickadee/issues/59))
 
 ### Improvements
