@@ -15,9 +15,9 @@
   import { isFolder, type BookmarkNode } from '@/lib/node';
   import { getActiveSpaceId, getCollapsed, getIcons, setActiveSpaceId, setCollapsed, watchCollapsed, watchIcons } from '@/lib/meta';
   import { cacheSettings, getCachedSettings, getSettings, setSettings, watchSettings, type Settings } from '@/lib/settings';
-  import { defaultTitle, joinEmoji, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
+  import { defaultTitle, joinEmoji, sameName, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
   import { openInBackground } from '@/lib/tabs';
-  import { remove, restore } from '@/lib/undo';
+  import { merge, remove, restore, unmerge, type Merged } from '@/lib/undo';
 
   let spaces = $state<Space[] | null>(null);
   let rootId = $state<string | undefined>();
@@ -195,9 +195,32 @@
     };
   }
 
+  // A space can't hold two categories with the same name, so moving into one that has it
+  // returns a question for the card to ask, and merges them if the answer is Merge.
   function moveCategory(category: Category, spaceId: string) {
     const space = realSpaces.find((space) => space.id === spaceId)!;
+    const same = space.categories.find((other) => sameName(other.title, category.title));
+    if (same) {
+      return {
+        question: `${spaceLabel(space)} already has “${same.title}”. Merge them?`,
+        merge: () => void mergeCategory(category, same, space),
+      };
+    }
     void moveTo(category.id, spaceId, `Moved “${category.title}” to ${spaceLabel(space)}`);
+  }
+
+  async function mergeCategory(category: Category, into: Category, space: Space) {
+    const merged = await merge(category.id, into.id);
+    toast = { message: `Merged “${category.title}” into ${spaceLabel(space)} › ${into.title}`, undo: () => void undoMerge(merged) };
+  }
+
+  async function undoMerge(merged: Merged) {
+    toast = null;
+    try {
+      await unmerge(merged);
+    } catch {
+      toast = { message: `Couldn't put back “${merged.folder.title}”` };
+    }
   }
 
   function moveLink(link: Link, categoryId: string) {

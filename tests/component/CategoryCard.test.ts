@@ -179,6 +179,34 @@ describe('CategoryCard', () => {
     expect(onmove).toHaveBeenCalledWith('s2');
   });
 
+  it('asks before merging into a category of the same name in the space it moves to', async () => {
+    const merge = vi.fn();
+    const onmove = vi.fn(() => ({ question: '🏠 Home already has “Repos”. Merge them?', merge }));
+    const spaces = [{ places: [{ id: 's2', label: '🏠 Home' }] }];
+    render(CategoryCard, { ...props, onrename: () => {}, ondelete: () => {}, spaces, onmove });
+    const pick = async () => {
+      await fireEvent.click(screen.getByRole('button', { name: 'Actions for Repos' }));
+      await fireEvent.click(screen.getByRole('button', { name: 'Move to…' }));
+      await fireEvent.click(screen.getByRole('button', { name: '🏠 Home' }));
+      return screen.getByRole('group', { name: 'Merge Repos' });
+    };
+
+    let question = await pick();
+    expect(question).toHaveTextContent('🏠 Home already has “Repos”. Merge them?');
+    expect(screen.getByRole('button', { name: 'Merge' })).toHaveFocus();
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(question).not.toBeInTheDocument();
+    question = await pick();
+    await fireEvent.keyDown(question, { key: 'Escape' });
+    expect(question).not.toBeInTheDocument();
+    expect(merge).not.toHaveBeenCalled();
+
+    question = await pick();
+    await fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    expect(merge).toHaveBeenCalledOnce();
+    expect(question).not.toBeInTheDocument();
+  });
+
   it('offers Move to… only when there is another space', async () => {
     render(CategoryCard, { ...props, onrename: () => {}, ondelete: () => {}, spaces: [], onmove: () => {} });
     await fireEvent.click(screen.getByRole('button', { name: 'Actions for Repos' }));

@@ -35,6 +35,37 @@ test('moves a category to another space with its links and collapse state, and U
   expect(await childTitles(dashboard, ids['🏠 Home']!)).toEqual(['Media']);
 });
 
+test('asks before merging into a category of the same name, and Undo puts both back', async ({ dashboard }) => {
+  const ids = await addBookmarks(dashboard, [
+    sample[0]!,
+    { title: '🏠 Home', children: [{ title: 'repos', children: [{ title: 'Codeberg', url: 'https://codeberg.org/' }] }] },
+  ]);
+  const moveRepos = async () => {
+    await dashboard.getByRole('button', { name: 'Actions for Repos' }).click();
+    await dashboard.getByRole('button', { name: 'Move to…' }).click();
+    await dashboard.getByRole('button', { name: '🏠 Home' }).click();
+  };
+
+  // Cancel leaves everything where it was.
+  await moveRepos();
+  const question = dashboard.getByRole('group', { name: 'Merge Repos' });
+  await expect(question).toContainText('🏠 Home already has “repos”. Merge them?');
+  await question.getByRole('button', { name: 'Cancel' }).click();
+  await expect(question).toBeHidden();
+  expect(await childTitles(dashboard, ids['💼 Work']!)).toEqual(['Repos', 'Docs']);
+
+  await moveRepos();
+  await question.getByRole('button', { name: 'Merge' }).click();
+  await expect(dashboard.getByRole('status')).toHaveText(/Merged “Repos” into 🏠 Home › repos/);
+  await expect.poll(() => childTitles(dashboard, ids['💼 Work']!)).toEqual(['Docs']);
+  expect(await childTitles(dashboard, ids['repos']!)).toEqual(['Codeberg', 'GitHub', 'GitLab']);
+
+  await dashboard.getByRole('button', { name: 'Undo' }).click();
+  await expect.poll(() => childTitles(dashboard, ids['💼 Work']!)).toEqual(['Repos', 'Docs']);
+  expect(await childTitles(dashboard, ids['repos']!)).toEqual(['Codeberg']);
+  await expect(dashboard.getByRole('heading', { level: 2 })).toHaveText([/Repos\s*2/, /Docs/]);
+});
+
 test('moves a link to a category in another space from the keyboard, and Undo puts it back', async ({ dashboard }) => {
   const ids = await addBookmarks(dashboard, sample);
   await dashboard.getByRole('link', { name: 'GitHub' }).hover();

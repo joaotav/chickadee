@@ -46,9 +46,13 @@
     ondeletelink: (link: Link) => void;
     /** A link dropped into this card, to go before `before`, or at the end without it. */
     onmovelink: (id: string, before: string | undefined) => void;
-    /** The spaces the category can move to, and moving it to one. */
+    /**
+     * The spaces the category can move to, and moving it to one. When that space has a
+     * category of the same name, `onmove` returns a question instead, and the merge to do
+     * if the answer is Merge.
+     */
     spaces?: PlaceGroup[];
-    onmove?: (spaceId: string) => void;
+    onmove?: (spaceId: string) => { question: string; merge: () => void } | undefined;
     /** The categories its links can move to, by space, and moving a link to one. */
     linkPlaces?: PlaceGroup[];
     onmovelinkto?: (link: Link, categoryId: string) => void;
@@ -82,16 +86,20 @@
   const CONFIRM_OVER = 10;
   // Only web links open, the same as clicking them.
   const urls = $derived(links.filter((link) => link.openable).map((link) => link.url));
-  let confirming = $state(false);
+  // A question asked on the card before acting, with a button to go ahead and one to cancel.
+  let asking = $state<{ label: string; question: string; answer: string; onanswer: () => void } | null>(null);
 
   function openAll() {
-    if (urls.length > CONFIRM_OVER) confirming = true;
-    else onopenall(urls);
+    if (urls.length > CONFIRM_OVER) {
+      asking = { label: 'Open all bookmarks', question: `Open ${urls.length} tabs?`, answer: 'Open', onanswer: () => onopenall(urls) };
+    } else {
+      onopenall(urls);
+    }
   }
 
-  function confirmOpen() {
-    confirming = false;
-    onopenall(urls);
+  function moveTo(spaceId: string) {
+    const merging = onmove?.(spaceId);
+    if (merging) asking = { label: `Merge ${title}`, question: merging.question, answer: 'Merge', onanswer: merging.merge };
   }
 
   const focus = (button: HTMLButtonElement) => button.focus();
@@ -111,7 +119,7 @@
   const items = $derived([
     ...(urls.length > 0 ? [{ label: 'Open all bookmarks', onselect: openAll }] : []),
     ...(onrename ? [{ label: 'Rename', onselect: () => (renaming = true) }] : []),
-    ...(onmove && spaces.length > 0 ? [{ label: 'Move to…', places: { groups: spaces, onpick: onmove } }] : []),
+    ...(onmove && spaces.length > 0 ? [{ label: 'Move to…', places: { groups: spaces, onpick: moveTo } }] : []),
     ...(ondelete ? [{ label: 'Delete', onselect: ondelete, danger: true }] : []),
   ]);
 </script>
@@ -148,24 +156,34 @@
       {/if}
     {/if}
   </div>
-  {#if confirming}
+  {#if asking}
+    {@const { label, question, answer, onanswer } = asking}
     <!-- The listener catches Escape from the buttons inside, which are interactive. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="confirm"
       role="group"
-      aria-label="Open all bookmarks"
-      {@attach outside(() => (confirming = false))}
+      aria-label={label}
+      {@attach outside(() => (asking = null))}
       onkeydown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation();
-          confirming = false;
+          asking = null;
         }
       }}
     >
-      <span>Open {urls.length} tabs?</span>
-      <button class="primary" onclick={confirmOpen} {@attach focus}>Open</button>
-      <button onclick={() => (confirming = false)}>Cancel</button>
+      <span>{question}</span>
+      <button
+        class="primary"
+        onclick={() => {
+          onanswer();
+          asking = null;
+        }}
+        {@attach focus}
+      >
+        {answer}
+      </button>
+      <button onclick={() => (asking = null)}>Cancel</button>
     </div>
   {/if}
   {#if !collapsed}
@@ -331,17 +349,24 @@
   .add {
     margin-top: var(--row-gap);
   }
+  /* Takes the card's width without widening it. A long question puts the buttons under it. */
   .confirm {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
+    width: 0;
+    min-width: 100%;
     margin-top: 8px;
     padding: 6px 6px 6px 10px;
     border: 1px solid var(--accent);
     border-radius: 8px;
   }
   .confirm span {
-    flex: 1;
+    flex: 1 1 auto;
+  }
+  .confirm .primary {
+    margin-left: auto;
   }
   .confirm button {
     width: auto;
