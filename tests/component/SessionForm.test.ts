@@ -25,6 +25,30 @@ describe('SessionForm', () => {
     expect(screen.getByRole('combobox', { name: 'Space' })).toHaveValue('s1');
   });
 
+  it('refuses the name of a category already in the picked space', async () => {
+    const onsave = vi.fn();
+    const withCategories: Space[] = [
+      { ...spaces[0]!, categories: [{ id: 'c1', title: 'Reading', links: [] }] },
+      { ...spaces[1]!, unsorted: [{ id: 'l1', title: 'Loose', url: 'https://example.com/', openable: true }] },
+    ];
+    render(SessionForm, { ...props, spaces: withCategories, onsave });
+    const name = screen.getByRole('textbox', { name: 'Name' });
+    await fireEvent.input(name, { target: { value: 'reading' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('There\'s already a category called “Reading” in 💼 Work');
+    expect(screen.getByRole('button', { name: 'Save tabs' })).toBeDisabled();
+    await fireEvent.submit(name);
+    expect(onsave).not.toHaveBeenCalled();
+
+    // Another space can have one called that, and Unsorted counts while the space has loose links.
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Space' }), { target: { value: 's2' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    await fireEvent.input(name, { target: { value: 'Unsorted' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('There\'s already a category called “Unsorted” in Home');
+    await fireEvent.input(name, { target: { value: 'Reading' } });
+    await fireEvent.submit(name);
+    expect(onsave).toHaveBeenCalledWith('s2', 'Reading');
+  });
+
   it('says how many tabs it saves once that is known', () => {
     const { unmount } = render(SessionForm, props);
     expect(screen.getByRole('button', { name: 'Save tabs' })).toBeInTheDocument();

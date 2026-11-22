@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { sessionName } from '@/lib/session';
-  import { joinEmoji, type Space } from '@/lib/tree';
+  import { joinEmoji, sameName, UNSORTED, type Space } from '@/lib/tree';
 
   let {
     spaces,
@@ -25,8 +25,18 @@
 
   const select = (input: HTMLInputElement) => input.select();
 
+  // A category already in the picked space with the typed name. Unsorted counts while the
+  // space has loose links, as on the new tab page.
+  const space = $derived(spaces.find((space) => space.id === picked)!);
+  const clash = $derived.by(() => {
+    const typed = name.trim();
+    const taken = [...(space.unsorted.length > 0 ? [UNSORTED] : []), ...space.categories.map((category) => category.title)];
+    return typed ? taken.find((other) => sameName(other, typed)) : undefined;
+  });
+
   function onsubmit(event: SubmitEvent) {
     event.preventDefault();
+    if (clash) return;
     // Called straight from the submit, which the permission request needs.
     onsave(picked, name.trim() || sessionName());
   }
@@ -42,7 +52,7 @@
   </p>
   <label>
     <span>Name</span>
-    <input bind:value={name} {@attach select} />
+    <input bind:value={name} aria-invalid={clash !== undefined} {@attach select} />
   </label>
   <label>
     <span>Space</span>
@@ -52,9 +62,12 @@
       {/each}
     </select>
   </label>
+  {#if clash !== undefined}
+    <p class="message" role="alert">There's already a category called “{clash}” in <span class="space">{joinEmoji(space.emoji, space.name)}</span></p>
+  {/if}
   <div class="buttons">
     <button type="button" onclick={oncancel}>Cancel</button>
-    <button type="submit" class="primary">{count === null ? 'Save tabs' : `Save ${count} ${count === 1 ? 'tab' : 'tabs'}`}</button>
+    <button type="submit" class="primary" disabled={clash !== undefined}>{count === null ? 'Save tabs' : `Save ${count} ${count === 1 ? 'tab' : 'tabs'}`}</button>
   </div>
 </form>
 
@@ -93,6 +106,14 @@
   select:focus {
     border-color: var(--accent);
   }
+  .message {
+    margin: 0;
+    color: var(--danger);
+    font-size: 12px;
+  }
+  .message .space {
+    white-space: nowrap;
+  }
   .buttons {
     display: flex;
     justify-content: flex-end;
@@ -118,5 +139,10 @@
     background: var(--accent-fill);
     color: var(--bg);
     filter: brightness(1.1);
+  }
+  .buttons .primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+    filter: none;
   }
 </style>
