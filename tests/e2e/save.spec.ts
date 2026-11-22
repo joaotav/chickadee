@@ -65,6 +65,8 @@ test('opens on the last used category, and says where a page is already saved', 
   const second = await popup({ url: 'https://github.com/', title: 'GitHub' });
   await expect(second.getByRole('combobox', { name: 'Category' }).locator('option:checked')).toHaveText('Media');
   await expect(second.getByText('Already in Work › Repos')).toBeVisible();
+  await second.getByRole('button', { name: 'Save anyway' }).click();
+  await expect(second.getByRole('status')).toHaveText(/Saved to Home › Media/);
 });
 
 test('only offers to save web pages', async ({ dashboard, popup }) => {
