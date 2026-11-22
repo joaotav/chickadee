@@ -17,6 +17,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - **Search lists up to 50 results instead of 10.** The list shows 10 at a time and scrolls for the rest
 - **The popup's Save button reads "Save anyway" when the page is already saved,** since saving adds a second copy ([#44](https://github.com/joaotav/chickadee/issues/44))
 - **The popup's message after saving shows the bookmark and where it went,** with the space's icon, and a line along the bottom counts down until the popup closes ([#78](https://github.com/joaotav/chickadee/issues/78))
+- **+ New category has Add and Cancel buttons,** like + Add bookmark. A click elsewhere no longer creates the category: it closes the form if nothing is typed, and keeps it open otherwise
 
 ### Bug fixes
 
