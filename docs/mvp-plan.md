@@ -320,7 +320,7 @@ Verify: save a page from each browser. It appears on an open new tab. On Firefox
 ### M7. Search
 
 - Search box on the right of the top bar. `/` focuses it once the page has focus.
-- uFuzzy over `title + " " + hostname` for every link in every space, including collapsed categories. Results appear in a dropdown under the search box, each showing where the link lives, like "Work › Repos". It lists up to 50, 10 at a time, and scrolls for the rest.
+- uFuzzy over `title + " " + hostname` for every link in every space, including collapsed categories. Then over the same plus the link's place, like "Work › Repos", so a space or category name finds the links in it, after the links whose title or site matches (#43). Results appear in a dropdown under the search box, each showing where the link lives, like "Work › Repos". It lists up to 50, 10 at a time, and scrolls for the rest.
 - Arrow keys move the selection. Enter opens in the current tab, Ctrl+Enter or Cmd+Enter in a background tab, Escape clears the search.
 - A footer under the results shows these keys, with ⌘ instead of Ctrl on a Mac (#31).
 - Matched characters are highlighted.

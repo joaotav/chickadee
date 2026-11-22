@@ -10,7 +10,7 @@ export interface Part {
 export interface Result {
   link: Link;
   /** Where the link lives, like "Work › Repos". */
-  place: string;
+  place: Part[];
   title: Part[];
   /** The URL without its scheme or "www.", which starts with the site. */
   address: Part[];
@@ -63,11 +63,23 @@ function split(text: string, ranges: number[], offset: number): Part[] {
   return parts;
 }
 
+/** The links in `haystack` that match, best first, with the matched stretches of each. */
+function find(haystack: string[], needle: string): { index: number; ranges: number[] }[] {
+  // Up to 5 words can come in any order. More would mean too many orders to try.
+  const [idxs, info, order] = fuzzy.search(haystack, needle, 5);
+  // With very many matches, or more than 5 words, uFuzzy skips ranking and highlighting.
+  // The matches are shown as found.
+  return info && order
+    ? order.map((i) => ({ index: info.idx[i]!, ranges: info.ranges[i]! }))
+    : (idxs ?? []).map((index) => ({ index, ranges: [] }));
+}
+
 /**
- * Builds a search over the title and site of every link in every space, including collapsed
- * categories. Links the page can't open, like bookmarklets, are left out. Accents don't
- * matter, and words can be typed in any order. The returned function gives the best `limit`
- * results, best first.
+ * Builds a search over the title, site and place of every link in every space, including
+ * collapsed categories, so the name of a space or category finds the links in it. Links whose
+ * title or site matches come first. Links the page can't open, like bookmarklets, are left
+ * out. Accents don't matter, and words can be typed in any order. The returned function gives
+ * the best `limit` results, best first.
  */
 export function createSearch(spaces: Space[], limit = 50): (query: string) => Result[] {
   const entries = spaces.flatMap((space) => [
@@ -77,25 +89,28 @@ export function createSearch(spaces: Space[], limit = 50): (query: string) => Re
     ),
   ]);
   const hosts = entries.map(({ link }) => hostOf(link.url));
-  const haystack = uFuzzy.latinize(entries.map(({ link }, i) => `${link.title} ${hosts[i]}`));
+  const titlesAndSites = entries.map(({ link }, i) => `${link.title} ${hosts[i]}`);
+  const haystack = uFuzzy.latinize(titlesAndSites);
+  const withPlaces = uFuzzy.latinize(titlesAndSites.map((text, i) => `${text} ${entries[i]!.place}`));
 
   return (query) => {
     const needle = uFuzzy.latinize(query.trim());
     if (!needle) return [];
-    // Up to 5 words can come in any order. More would mean too many orders to try.
-    const [idxs, info, order] = fuzzy.search(haystack, needle, 5);
-    // With very many matches, or more than 5 words, uFuzzy skips ranking and highlighting.
-    // The matches are shown as found.
-    const found =
-      info && order
-        ? order.map((i) => ({ index: info.idx[i]!, ranges: info.ranges[i]! }))
-        : (idxs ?? []).map((index) => ({ index, ranges: [] as number[] }));
-    return found.slice(0, limit).map(({ index, ranges }) => {
+    const byTitle = find(haystack, needle);
+    const seen = new Set(byTitle.map(({ index }) => index));
+    const byPlace = find(withPlaces, needle).filter(({ index }) => !seen.has(index));
+    return [...byTitle, ...byPlace].slice(0, limit).map(({ index, ranges }) => {
       const { link, place } = entries[index]!;
-      // Only the title and site are searched, so matches in the address are all in the site.
-      const host = split(hosts[index]!, ranges, link.title.length + 1);
-      const rest = afterHost(link.url, hosts[index]!);
-      return { link, place, title: split(link.title, ranges, 0), address: rest ? [...host, { text: rest, match: false }] : host };
+      const host = hosts[index]!;
+      // Only the site of the address is searched, so matches in it are all in the site.
+      const site = split(host, ranges, link.title.length + 1);
+      const rest = afterHost(link.url, host);
+      return {
+        link,
+        place: split(place, ranges, link.title.length + host.length + 2),
+        title: split(link.title, ranges, 0),
+        address: rest ? [...site, { text: rest, match: false }] : site,
+      };
     });
   };
 }

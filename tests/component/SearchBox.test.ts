@@ -44,6 +44,13 @@ describe('SearchBox', () => {
     expect(options()).toEqual(['YouTube Home › Media · youtube.com']);
   });
 
+  it('finds the links in a category by its name, and marks the name', async () => {
+    const { box } = setup();
+    await type(box, 'media');
+    expect(options()).toEqual(['YouTube Home › Media · youtube.com']);
+    expect([...screen.getByRole('option').querySelectorAll('mark')].map((mark) => mark.textContent)).toEqual(['Media']);
+  });
+
   it('tells pages on the same site apart by their address, with the full URL on hover', async () => {
     const onopen = vi.fn();
     const sameSite: Space[] = [
