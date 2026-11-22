@@ -32,7 +32,7 @@
   let picking = $state(false);
   const QUICK = EMOJI.slice(0, 14);
 
-  function pick(emoji: string) {
+  function pick(emoji: string | null) {
     chosen = emoji;
     picking = false;
   }
@@ -71,7 +71,47 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form class="space-form" aria-label={heading} {onsubmit} {onkeydown} {@attach outside(closeIfUnchanged)}>
   <h2>{heading}</h2>
-  {#if proto.variant === 'b'}
+  {#if proto.variant === 'd'}
+    <!-- The icon button and the name share one field. The picker floats under it. -->
+    <div class="field-wrap" {@attach outside(() => (picking = false))}>
+      <div class="field">
+        <button
+          type="button"
+          class="field-icon"
+          aria-label={chosen ? `Icon ${chosen}` : 'Icon'}
+          aria-expanded={picking}
+          onclick={() => (picking = !picking)}
+          onkeydown={(event) => {
+            if (event.key === 'Escape' && picking) {
+              event.stopPropagation();
+              picking = false;
+            }
+          }}
+        >
+          {#if chosen}
+            {chosen}
+          {:else}
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" /><path d="M5.6 9.6c.6.9 1.4 1.3 2.4 1.3s1.8-.4 2.4-1.3" /><circle cx="6" cy="6.6" r=".5" /><circle cx="10" cy="6.6" r=".5" /></svg>
+          {/if}
+        </button>
+        <input class="field-name" bind:value={text} aria-label="Space name" placeholder="Name" {@attach focus} />
+      </div>
+      {#if picking}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="floating"
+          onkeydown={(event) => {
+            if (event.key === 'Escape') {
+              event.stopPropagation();
+              picking = false;
+            }
+          }}
+        >
+          <EmojiPicker onpick={pick} extras />
+        </div>
+      {/if}
+    </div>
+  {:else if proto.variant === 'b'}
     <div class="name-row">
       <button type="button" class="icon-button" aria-label="Icon" aria-expanded={picking} onclick={() => (picking = !picking)}>
         {chosen ?? '∅'}
@@ -178,6 +218,67 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+  .field-wrap {
+    position: relative;
+  }
+  .field {
+    display: flex;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+  }
+  .field:focus-within {
+    border-color: var(--accent);
+  }
+  .field-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 34px;
+    border-right: 1px solid var(--border);
+    border-radius: 5px 0 0 5px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+  .field-icon:hover,
+  .field-icon[aria-expanded='true'] {
+    background: var(--row);
+    color: var(--accent);
+  }
+  .field-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.3;
+    stroke-linecap: round;
+  }
+  .field-icon svg circle[r='.5'] {
+    fill: currentColor;
+  }
+  .field-name {
+    flex: 1;
+    min-width: 0;
+    padding: 0 10px;
+    border: 0;
+    outline: none;
+    background: none;
+    color: var(--fg);
+    font: inherit;
+  }
+  .floating {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    z-index: 5;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    box-shadow: 0 12px 32px #0008;
   }
   .name-row {
     display: flex;
