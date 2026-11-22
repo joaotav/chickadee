@@ -73,7 +73,7 @@ describe('importFile', () => {
     ]);
     expect(result.links).toBe(4);
     expect(result.spaces).toEqual(['s1', result.created[2], 'w']);
-    expect(result.skipped).toBe(0);
+    expect(result.refused).toBe(0);
   });
 
   it('adds nothing when the same file is imported again', async () => {
@@ -82,7 +82,7 @@ describe('importFile', () => {
     const before = await tree();
     const again = await importFile(file, await workspace(), 'merge');
     expect(await tree()).toEqual(before);
-    expect(again).toEqual({ created: [], links: 0, spaces: [], skipped: 0 });
+    expect(again).toEqual({ created: [], links: 0, spaces: [], refused: 0 });
   });
 
   it('keeps spaces separate with a number after a taken name, and the file icon', async () => {
@@ -100,15 +100,27 @@ describe('importFile', () => {
     expect(((await tree()) as [string, unknown[]])[1].at(-1)).toEqual(['New', [['Pair', ['Same', 'Same']], ['Empty', []]]]);
   });
 
-  it('leaves out links that are not web pages, counting them', async () => {
-    const { workspace, tree } = setup();
+  it('keeps links that are not web pages, and makes web links of addresses without a scheme', async () => {
+    const { workspace } = setup();
     const result = await importFile(
-      { loose: [{ title: 'Bookmarklet', url: 'javascript:alert(1)' }, { title: 'Mail', url: 'mailto:someone@example.com' }, { title: 'Web', url: 'https://example.com/web' }], spaces: [] },
+      {
+        loose: [
+          { title: 'Bookmarklet', url: 'javascript:alert(1)' },
+          { title: 'Settings', url: 'chrome://settings/' },
+          { title: 'Web', url: 'example.com/web' },
+        ],
+        spaces: [],
+      },
       await workspace(),
       'merge',
     );
-    expect(result).toMatchObject({ links: 1, skipped: 2 });
-    expect(((await tree()) as [string, unknown[]])[1].at(-1)).toBe('Web');
+    expect(result).toMatchObject({ links: 3, refused: 0 });
+    const added = (await workspace()).children!.slice(-3).map(({ title, url }) => ({ title, url }));
+    expect(added).toEqual([
+      { title: 'Bookmarklet', url: 'javascript:alert(1)' },
+      { title: 'Settings', url: 'chrome://settings/' },
+      { title: 'Web', url: 'https://example.com/web' },
+    ]);
   });
 
   it('counts the links the browser refuses, and goes on with the rest', async () => {
@@ -119,7 +131,7 @@ describe('importFile', () => {
       return create(details);
     });
     const result = await importFile(file, await workspace(), 'merge');
-    expect(result.skipped).toBe(1);
+    expect(result.refused).toBe(1);
     expect(result.links).toBe(3);
   });
 });

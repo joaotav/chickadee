@@ -15,8 +15,8 @@ export interface Imported {
   links: number;
   /** The spaces it added to, in order. Links outside any space count as the Workspace's. */
   spaces: string[];
-  /** How many links it left out: ones that aren't web pages, like bookmarklets, and ones the browser refused. */
-  skipped: number;
+  /** How many links the browser refused, like addresses it doesn't allow an extension to save. */
+  refused: number;
 }
 
 const nameOf = (title: string) => splitEmoji(title).name;
@@ -45,14 +45,14 @@ function freeTitle(title: string, spaces: BookmarkNode[]) {
 }
 
 /**
- * Adds a bookmarks file to the Workspace, never changing or deleting what's there. Links that
- * aren't web pages are left out. With
- * `merge`, a space or category with the same name as one already here gets the new things,
- * skipping links whose address it already has. With `separate`, every space in the file is
- * added as a new one, with a number after a taken name.
+ * Adds a bookmarks file to the Workspace, never changing or deleting what's there. Links keep
+ * their addresses, bookmarklets and browser pages included, so a backup comes back whole.
+ * With `merge`, a space or category with the same name as one already here gets the new
+ * things, skipping links whose address it already has. With `separate`, every space in the
+ * file is added as a new one, with a number after a taken name.
  */
 export async function importFile(file: BookmarksFile, workspace: BookmarkNode, mode: 'merge' | 'separate'): Promise<Imported> {
-  const result: Imported = { created: [], links: 0, spaces: [], skipped: 0 };
+  const result: Imported = { created: [], links: 0, spaces: [], refused: 0 };
   const touch = (spaceId: string) => {
     if (!result.spaces.includes(spaceId)) result.spaces.push(spaceId);
   };
@@ -69,12 +69,8 @@ export async function importFile(file: BookmarksFile, workspace: BookmarkNode, m
   async function addLinks(folder: BookmarkNode, links: FileLink[], isNew: boolean, spaceId: string) {
     const had = new Set(isNew ? [] : (folder.children ?? []).filter(isLink).map((link) => normal(link.url)));
     for (const link of links) {
-      // Only web pages, as when adding a link on the page. A file can come from anywhere.
-      const url = toWebUrl(link.url);
-      if (!url) {
-        result.skipped++;
-        continue;
-      }
+      // An address without a scheme, like "example.com", is a web page, as when adding a link.
+      const url = toWebUrl(link.url) ?? link.url;
       if (had.has(normal(url))) continue;
       try {
         const { id } = await browser.bookmarks.create({ parentId: folder.id, title: link.title, url });
@@ -82,7 +78,7 @@ export async function importFile(file: BookmarksFile, workspace: BookmarkNode, m
         result.links++;
         touch(spaceId);
       } catch {
-        result.skipped++;
+        result.refused++;
       }
     }
   }

@@ -18,7 +18,7 @@ ADR 0005 planned a JSON file of the `Workspace` with its collapse state, to move
 
 - A file with a `Workspace` folder anywhere in it gives that folder's spaces, and the rest of the file is left out. Any other file gives its top folders as spaces and their folders as categories. Folders deeper than that are flattened into their category.
 - It never changes or deletes existing bookmarks. When spaces in the file have names already taken, it asks first whether to merge them or keep them separate, numbered like "Work (2)". Merging adds to the space and category of the same name, skipping addresses already there, so importing a file twice adds nothing the second time.
-- Only web links are imported, as on the page itself. Bookmarklets and other addresses are left out and counted in the message.
+- Links keep their addresses, bookmarklets and browser pages like `chrome://settings` included, so a backup comes back whole. The page shows them greyed out, as it always has, and never opens or runs them. Only what the browser refuses is left out, and the message counts it. An address without a scheme, like `example.com`, becomes a web link.
 - Everything it creates is recorded, and Undo removes it.
 
 ## Consequences

@@ -261,12 +261,12 @@
     }
     const result = await importFile(file, await getWorkspace(), mode);
     if (result.created.length === 0) {
-      toast = { message: result.skipped > 0 ? "Couldn't add the bookmarks in this file" : 'Everything in this file is already here' };
+      toast = { message: result.refused > 0 ? "Couldn't add the bookmarks in this file" : 'Everything in this file is already here' };
       return;
     }
     await load();
     select(result.spaces[0]!);
-    const refused = result.skipped > 0 ? `. ${plural(result.skipped, 'bookmark')} that ${result.skipped === 1 ? "isn't a web page was" : "aren't web pages were"} left out` : '';
+    const refused = result.refused > 0 ? `. ${plural(result.refused, 'bookmark')} the browser didn't accept ${result.refused === 1 ? 'was' : 'were'} left out` : '';
     toast = {
       message: `Imported ${plural(result.links, 'bookmark')} in ${plural(result.spaces.length, 'space')}${refused}`,
       undo: () => {
