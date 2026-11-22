@@ -115,7 +115,7 @@
           {
             label: 'Move to…',
             onselect: () => (moving = true),
-            ...(proto.variant === 'a' && { places: { groups: spaces, onpick: (spaceId: string) => onmoveto!(spaceId) } }),
+            ...((proto.variant === 'a' || proto.variant === 'd') && { places: { groups: spaces, onpick: (spaceId: string) => onmoveto!(spaceId) } }),
           },
         ]
       : []),

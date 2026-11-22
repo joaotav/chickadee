@@ -12,6 +12,8 @@
 </script>
 
 <script lang="ts">
+  import { proto } from '@/lib/prototype.svelte';
+
   let {
     label,
     items,
@@ -31,9 +33,37 @@
   let toggleButton: HTMLButtonElement;
 
   let sub = $state<MenuItem | null>(null);
+  let filter = $state('');
   $effect(() => {
     if (!open) sub = null;
   });
+  $effect(() => {
+    if (sub) filter = '';
+  });
+
+  // Places whose name, or whose space's name, contains what was typed.
+  const shownGroups = $derived.by(() => {
+    const query = filter.trim().toLowerCase();
+    return (sub?.places?.groups ?? [])
+      .map((group) => {
+        const groupMatches = !!group.label && group.label.toLowerCase().includes(query);
+        return { ...group, places: group.places.filter((place) => groupMatches || place.label.toLowerCase().includes(query)) };
+      })
+      .filter((group) => group.places.length > 0);
+  });
+
+  const focus = (element: HTMLElement) => element.focus();
+
+  function onsearchkeydown(event: KeyboardEvent) {
+    const first = shownGroups[0]?.places[0];
+    if (event.key === 'Enter' && first) {
+      open = false;
+      sub!.places!.onpick(first.id);
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      root.querySelector<HTMLElement>('.place')?.focus();
+    }
+  }
 
   function select(item: MenuItem) {
     if (item.places) {
@@ -73,16 +103,24 @@
       {#if sub?.places}
         {@const places = sub.places}
         <button class="back" onclick={() => (sub = null)}>‹ {sub.label.replace('…', '')}</button>
-        {#each places.groups as group}
+        {#if proto.variant === 'd'}
+          <input class="search" type="text" placeholder="Search" aria-label="Search places" bind:value={filter} onkeydown={onsearchkeydown} {@attach focus} />
+        {/if}
+        {#each proto.variant === 'd' ? shownGroups : places.groups as group}
           {#if group.label}<span class="group">{group.label}</span>{/if}
           {#each group.places as place}
+            <!-- Enter in the search field picks the first match, so it's highlighted. -->
             <button
+              class="place"
+              class:first={proto.variant === 'd' && filter.trim() !== '' && place === shownGroups[0]?.places[0]}
               onclick={() => {
                 open = false;
                 places.onpick(place.id);
               }}>{place.label}</button
             >
           {/each}
+        {:else}
+          <span class="none">No matches</span>
         {/each}
       {:else}
         <!-- Not keyed: two items can share a label, like two spaces with the same name. -->
@@ -160,6 +198,28 @@
   }
   .items .back {
     margin-bottom: 2px;
+    color: var(--muted);
+  }
+  .items .search {
+    flex: none;
+    height: 26px;
+    margin: 0 2px 4px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 5px;
+    outline: none;
+    background: var(--bg);
+    color: var(--fg);
+    font: inherit;
+  }
+  .items .search::placeholder {
+    color: var(--muted);
+  }
+  .items .first {
+    background: var(--row-hover);
+  }
+  .items .none {
+    padding: 6px 10px;
     color: var(--muted);
   }
   .items .group {

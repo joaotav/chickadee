@@ -97,7 +97,7 @@
               {
                 label: 'Move to…',
                 onselect: () => (moving = true),
-                ...(proto.variant === 'a' && { places: { groups: places, onpick: (id: string) => onmoveto!(id) } }),
+                ...((proto.variant === 'a' || proto.variant === 'd') && { places: { groups: places, onpick: (id: string) => onmoveto!(id) } }),
               },
             ]
           : []),

@@ -5,6 +5,7 @@ export const VARIANTS = {
   a: { name: 'In the menu', hint: 'Move to… swaps the ⋯ menu for the list of places' },
   b: { name: 'Dropdown', hint: 'A box under the card or link with a dropdown, Move and Cancel' },
   c: { name: 'Searchable list', hint: 'A box with a search field above the list of places' },
+  d: { name: 'Menu with search', hint: 'A, with a small search field at the top of the menu' },
 } as const;
 
 export type Variant = keyof typeof VARIANTS;
