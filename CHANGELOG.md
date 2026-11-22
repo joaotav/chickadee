@@ -13,6 +13,10 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - **The popup's Save button reads "Save anyway" when the page is already saved,** since saving adds a second copy ([#44](https://github.com/joaotav/chickadee/issues/44))
 - **The popup's message after saving shows the bookmark and where it went,** with the space's icon, and a line along the bottom counts down until the popup closes ([#78](https://github.com/joaotav/chickadee/issues/78))
 
+### Bug fixes
+
+- **Messages at the bottom of the page no longer stretch across it for a long name.** They stop at 480 pixels and cut the name short, and hovering shows the whole message
+
 ## 0.2.0 - 2026-11-17
 
 ### Improvements

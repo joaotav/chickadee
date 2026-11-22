@@ -122,3 +122,15 @@ test('only the most recent delete can be undone', async ({ dashboard }) => {
   await expect(dashboard.getByRole('link', { name: 'Codeberg' })).toBeVisible();
   await expect(dashboard.getByRole('link', { name: 'MDN' })).toHaveCount(0);
 });
+
+test('a message about a long name stays narrow, cutting the name short', async ({ dashboard }) => {
+  const title = `A bookmark with a very long title ${'that keeps going '.repeat(8)}`.trim();
+  await addBookmarks(dashboard, [{ title: 'Work', children: [{ title: 'Reading', children: [{ title, url: 'https://example.com/' }] }] }]);
+  await dashboard.getByRole('link', { name: /^A bookmark/ }).hover();
+  await deleteFrom(dashboard, `Actions for ${title}`);
+  const toast = dashboard.getByRole('status');
+  await expect(toast).toHaveText(new RegExp(`Deleted “${title}”`));
+  expect((await toast.boundingBox())!.width).toBeLessThanOrEqual(480);
+  // Hovering shows the whole message.
+  await expect(toast.getByText(/^Deleted/)).toHaveAttribute('title', `Deleted “${title}”`);
+});

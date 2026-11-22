@@ -44,7 +44,7 @@
   onpointermove={() => (paused = true)}
   onpointerleave={() => (paused = false)}
 >
-  <span class="message">{message}</span>
+  <span class="message" title={message}>{message}</span>
   {#if onundo}
     <button onclick={onundo}>Undo</button>
   {:else}
@@ -65,7 +65,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    max-width: calc(100vw - 32px);
+    /* A long name is cut short instead of widening the message across the page. */
+    max-width: min(480px, 100vw - 32px);
     padding: 10px 10px 10px 16px;
     border: 1px solid var(--border);
     border-radius: 10px;
