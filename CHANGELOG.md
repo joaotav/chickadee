@@ -4,6 +4,10 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ## Unreleased
 
+## 0.3.0 - 2026-11-22
+
+Save all your open tabs as a session, move categories and bookmarks to another space, find links by the name of their space or category, and pick any emoji as a space's icon.
+
 ### Features
 
 - **Save all the tabs in a window as a new category,** from **All tabs** at the top of the toolbar popup, to close a working session and reopen it later with **Open all bookmarks**. Pinned tabs and pages that aren't web pages are left out. The first time, Chickadee asks for permission to read your tabs ([#35](https://github.com/joaotav/chickadee/issues/35))
@@ -11,14 +15,14 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 ### Improvements
 
+- **Search finds links by the name of their space or category too.** Typing "taxes" lists the links in Taxes, after any links whose own title or site matches, and words can be mixed, as in "taxes bank" ([#43](https://github.com/joaotav/chickadee/issues/43))
 - **Pick a space's icon from every emoji,** with search and categories, from a button inside the name field of **New space** and **Rename space**. An emoji with skin tones offers them when you pick it, and **Random** picks one for you. The emoji are part of the extension, so nothing is downloaded ([#64](https://github.com/joaotav/chickadee/issues/64))
 - **Drag a bookmark from anywhere on it,** as with categories, instead of by a grip over its icon. A click still opens it. With the keyboard, Tab to a bookmark's grip, now shown as an outline around it, and Space picks it up as before ([#72](https://github.com/joaotav/chickadee/issues/72))
-- **The card sizing option "Fixed" is now "Fixed width",** to say what stays the same
-- **Search finds links by the name of their space or category too.** Typing "taxes" lists the links in Taxes, after any links whose own title or site matches, and words can be mixed, as in "taxes bank" ([#43](https://github.com/joaotav/chickadee/issues/43))
+- **The popup's message after saving shows the bookmark and where it went,** with the space's icon, and a line along the bottom counts down until the popup closes ([#78](https://github.com/joaotav/chickadee/issues/78))
 - **Search lists up to 50 results instead of 10.** The list shows 10 at a time and scrolls for the rest
 - **The popup's Save button reads "Save anyway" when the page is already saved,** since saving adds a second copy ([#44](https://github.com/joaotav/chickadee/issues/44))
-- **The popup's message after saving shows the bookmark and where it went,** with the space's icon, and a line along the bottom counts down until the popup closes ([#78](https://github.com/joaotav/chickadee/issues/78))
 - **+ New category has Add and Cancel buttons,** like + Add bookmark. A click elsewhere no longer creates the category: it closes the form if nothing is typed, and keeps it open otherwise
+- **The card sizing option "Fixed" is now "Fixed width",** to say what stays the same
 
 ### Bug fixes
 
