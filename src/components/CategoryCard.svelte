@@ -9,6 +9,8 @@
   import InlineInput from './InlineInput.svelte';
   import LinkItem from './LinkItem.svelte';
   import Menu from './Menu.svelte';
+  import MovePicker, { type PlaceGroup } from './MovePicker.svelte';
+  import { proto } from '@/lib/prototype.svelte';
 
   let {
     id,
@@ -23,6 +25,10 @@
     onupdatelink,
     ondeletelink,
     onmovelink,
+    spaces = [],
+    onmoveto,
+    linkPlaces = [],
+    onmovelinkto,
   }: {
     id: string;
     title: string;
@@ -39,7 +45,20 @@
     ondeletelink: (link: Link) => void;
     /** A link dropped into this card, to go before `before`, or at the end without it. */
     onmovelink: (id: string, before: string | undefined) => void;
+    /** PROTOTYPE (#59): the spaces this category can move to, and moving it. */
+    spaces?: PlaceGroup[];
+    onmoveto?: (spaceId: string) => void;
+    /** PROTOTYPE (#59): the categories its links can move to, and moving one. */
+    linkPlaces?: PlaceGroup[];
+    onmovelinkto?: (link: Link, categoryId: string) => void;
   } = $props();
+
+  let moving = $state(false);
+  const hasSpaces = $derived(!!onmoveto && spaces.some((group) => group.places.length > 0));
+  // A link moves to any category but its own.
+  const otherPlaces = $derived(
+    linkPlaces.map((group) => ({ ...group, places: group.places.filter((place) => place.id !== id) })).filter((group) => group.places.length > 0),
+  );
 
   // Follows the dragged link around, until the move is saved and the links come back from
   // the browser.
@@ -91,6 +110,15 @@
   const items = $derived([
     ...(urls.length > 0 ? [{ label: 'Open all bookmarks', onselect: openAll }] : []),
     ...(onrename ? [{ label: 'Rename', onselect: () => (renaming = true) }] : []),
+    ...(hasSpaces
+      ? [
+          {
+            label: 'Move to…',
+            onselect: () => (moving = true),
+            ...(proto.variant === 'a' && { places: { groups: spaces, onpick: (spaceId: string) => onmoveto!(spaceId) } }),
+          },
+        ]
+      : []),
     ...(ondelete ? [{ label: 'Delete', onselect: ondelete, danger: true }] : []),
   ]);
 </script>
@@ -125,6 +153,17 @@
       {/if}
     {/if}
   </div>
+  {#if moving}
+    <MovePicker
+      heading="Move “{title}” to"
+      groups={spaces}
+      onmove={(spaceId) => {
+        moving = false;
+        onmoveto?.(spaceId);
+      }}
+      oncancel={() => (moving = false)}
+    />
+  {/if}
   {#if confirming}
     <!-- The listener catches Escape from the buttons inside, which are interactive. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -163,7 +202,13 @@
         >
           {#each rows as link (link.id)}
             <li aria-label={link.title} animate:flip={{ duration: FLIP_MS }}>
-              <LinkItem {link} onupdate={(changes) => onupdatelink(link.id, changes)} ondelete={() => ondeletelink(link)} />
+              <LinkItem
+                {link}
+                onupdate={(changes) => onupdatelink(link.id, changes)}
+                ondelete={() => ondeletelink(link)}
+                places={otherPlaces}
+                onmoveto={onmovelinkto && ((categoryId) => onmovelinkto(link, categoryId))}
+              />
             </li>
           {/each}
         </ul>

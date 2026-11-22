@@ -1,7 +1,11 @@
 <script lang="ts" module>
+  import type { PlaceGroup } from './MovePicker.svelte';
+
   export interface MenuItem {
     label: string;
     onselect: () => void;
+    /** PROTOTYPE (#59, variant A): a list of places the menu swaps to, instead of `onselect`. */
+    places?: { groups: PlaceGroup[]; onpick: (id: string) => void };
     /** Shown in red, for actions like Delete. */
     danger?: boolean;
   }
@@ -26,14 +30,24 @@
   let root: HTMLElement;
   let toggleButton: HTMLButtonElement;
 
+  let sub = $state<MenuItem | null>(null);
+  $effect(() => {
+    if (!open) sub = null;
+  });
+
   function select(item: MenuItem) {
+    if (item.places) {
+      sub = item;
+      return;
+    }
     open = false;
     item.onselect();
   }
 
   // A click anywhere outside the menu closes it.
   function onWindowClick(event: MouseEvent) {
-    if (open && !root.contains(event.target as Node)) open = false;
+    // The path, not the target: a click that swaps the list removes its target from the page.
+    if (open && !event.composedPath().includes(root)) open = false;
   }
 
   function onWindowKeydown(event: KeyboardEvent) {
@@ -56,10 +70,26 @@
   </button>
   {#if open}
     <div class="items" class:left={align === 'left'}>
-      <!-- Not keyed: two items can share a label, like two spaces with the same name. -->
-      {#each items as item}
-        <button class:danger={item.danger} onclick={() => select(item)}>{item.label}</button>
-      {/each}
+      {#if sub?.places}
+        {@const places = sub.places}
+        <button class="back" onclick={() => (sub = null)}>‹ {sub.label.replace('…', '')}</button>
+        {#each places.groups as group}
+          {#if group.label}<span class="group">{group.label}</span>{/if}
+          {#each group.places as place}
+            <button
+              onclick={() => {
+                open = false;
+                places.onpick(place.id);
+              }}>{place.label}</button
+            >
+          {/each}
+        {/each}
+      {:else}
+        <!-- Not keyed: two items can share a label, like two spaces with the same name. -->
+        {#each items as item}
+          <button class:danger={item.danger} onclick={() => select(item)}>{item.label}</button>
+        {/each}
+      {/if}
     </div>
   {/if}
 </div>
@@ -127,6 +157,16 @@
   }
   .items button:hover {
     background: var(--row-hover);
+  }
+  .items .back {
+    margin-bottom: 2px;
+    color: var(--muted);
+  }
+  .items .group {
+    padding: 6px 10px 2px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
   }
   .items .danger {
     color: var(--danger);

@@ -4,19 +4,28 @@
   import InlineInput from './InlineInput.svelte';
   import LinkIcon from './LinkIcon.svelte';
   import Menu from './Menu.svelte';
+  import MovePicker, { type PlaceGroup } from './MovePicker.svelte';
+  import { proto } from '@/lib/prototype.svelte';
 
   let {
     link,
     onupdate,
     ondelete,
+    places = [],
+    onmoveto,
   }: {
     link: Link;
     /** Renames the link or changes its URL. Without it, the link can't be edited. */
     onupdate?: (changes: { title?: string; url?: string }) => void;
     ondelete?: () => void;
+    /** PROTOTYPE (#59): the categories this link can move to, and moving it. */
+    places?: PlaceGroup[];
+    onmoveto?: (categoryId: string) => void;
   } = $props();
 
   let editing = $state<'title' | 'url' | null>(null);
+  let moving = $state(false);
+  const hasPlaces = $derived(!!onmoveto && places.some((group) => group.places.length > 0));
 
   function saveUrl(text: string) {
     const url = toWebUrl(text);
@@ -83,11 +92,31 @@
       items={[
         { label: 'Rename', onselect: () => (editing = 'title') },
         { label: 'Edit URL', onselect: () => (editing = 'url') },
+        ...(hasPlaces
+          ? [
+              {
+                label: 'Move to…',
+                onselect: () => (moving = true),
+                ...(proto.variant === 'a' && { places: { groups: places, onpick: (id: string) => onmoveto!(id) } }),
+              },
+            ]
+          : []),
         ...(ondelete ? [{ label: 'Delete', onselect: ondelete, danger: true }] : []),
       ]}
     />
   {/if}
 </div>
+{#if moving}
+  <MovePicker
+    heading="Move “{link.title}” to"
+    groups={places}
+    onmove={(id) => {
+      moving = false;
+      onmoveto?.(id);
+    }}
+    oncancel={() => (moving = false)}
+  />
+{/if}
 
 <style>
   .row {

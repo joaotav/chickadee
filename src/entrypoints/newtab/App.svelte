@@ -4,7 +4,9 @@
   import { flip } from 'svelte/animate';
   import CategoryCard from '@/components/CategoryCard.svelte';
   import DeleteSpace from '@/components/DeleteSpace.svelte';
+  import type { PlaceGroup } from '@/components/MovePicker.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
+  import PrototypeSwitcher from '@/components/PrototypeSwitcher.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
   import SpaceForm from '@/components/SpaceForm.svelte';
@@ -17,6 +19,7 @@
   import { defaultTitle, joinEmoji, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
   import { openInBackground } from '@/lib/tabs';
   import { remove, restore } from '@/lib/undo';
+  import { browser } from 'wxt/browser';
 
   let spaces = $state<Space[] | null>(null);
   let rootId = $state<string | undefined>();
@@ -30,7 +33,7 @@
   let actionsWidth = $state(0);
   // The toast after a delete holds what was deleted, so it can be undone. Only the most
   // recent delete can be.
-  let toast = $state<{ message: string; deleted?: BookmarkNode } | null>(null);
+  let toast = $state<{ message: string; deleted?: BookmarkNode; undo?: () => void } | null>(null);
   let activeId = $state<string | undefined>();
   let error = $state<string | null>(null);
   let collapsed = $state<string[]>([]);
@@ -157,6 +160,46 @@
     } catch {
       toast = { message: `Couldn't restore “${deleted.title}”` };
     }
+  }
+
+  // PROTOTYPE (#59): where categories and links can move to. Not the "Unsorted" tab, which
+  // holds links only.
+  const realSpaces = $derived((spaces ?? []).filter(isRealSpace));
+  const spaceLabel = (space: Space) => joinEmoji(space.emoji, space.name);
+  const spacePlaces = $derived<PlaceGroup[]>([
+    { places: realSpaces.filter((space) => space.id !== active?.id).map((space) => ({ id: space.id, label: spaceLabel(space) })) },
+  ]);
+  const categoryPlaces = $derived<PlaceGroup[]>(
+    realSpaces
+      .map((space) => ({ label: spaceLabel(space), places: space.categories.map((category) => ({ id: category.id, label: category.title })) }))
+      .filter((group) => group.places.length > 0),
+  );
+
+  // Moves to the end of `parentId`, with Undo putting it back where it was.
+  async function moveTo(id: string, parentId: string, message: string) {
+    const [node] = await browser.bookmarks.get(id);
+    const siblings = await browser.bookmarks.getChildren(node!.parentId!);
+    const from = node!.parentId!;
+    const before = siblings[node!.index! + 1]?.id;
+    moveItem(id, parentId, undefined);
+    toast = {
+      message,
+      undo: () => {
+        toast = null;
+        moveItem(id, from, before);
+      },
+    };
+  }
+
+  function moveCategory(category: Category, spaceId: string) {
+    const space = realSpaces.find((space) => space.id === spaceId)!;
+    void moveTo(category.id, spaceId, `Moved “${category.title}” to ${spaceLabel(space)}`);
+  }
+
+  function moveLink(link: Link, categoryId: string) {
+    const space = realSpaces.find((space) => space.categories.some((category) => category.id === categoryId))!;
+    const category = space.categories.find((category) => category.id === categoryId)!;
+    void moveTo(link.id, categoryId, `Moved “${link.title}” to ${spaceLabel(space)} › ${category.title}`);
   }
 
   function saveCollapsed(ids: string[]) {
@@ -297,6 +340,10 @@
               onupdatelink={updateLink}
               ondeletelink={deleteLink}
               onmovelink={(id, before) => moveItem(id, category.id, before)}
+              spaces={spacePlaces}
+              onmoveto={(spaceId) => moveCategory(category, spaceId)}
+              linkPlaces={categoryPlaces}
+              onmovelinkto={moveLink}
             />
           {:else if card.id === NEW_CATEGORY}
             <NewCategory oncreate={(title) => void create(active.id, title)} />
@@ -312,6 +359,8 @@
               onupdatelink={updateLink}
               ondeletelink={deleteLink}
               onmovelink={(id, before) => moveItem(id, active.id, before)}
+              linkPlaces={categoryPlaces}
+              onmovelinkto={moveLink}
             />
           {/if}
         </div>
@@ -320,10 +369,15 @@
   {/if}
 </main>
 
+<!-- PROTOTYPE, only in development builds. -->
+{#if import.meta.env.DEV}
+  <PrototypeSwitcher />
+{/if}
+
 {#if toast}
   <!-- Keyed, so a new delete restarts the countdown. -->
   {#key toast}
-    <Toast message={toast.message} onundo={toast.deleted ? undo : undefined} ondismiss={() => (toast = null)} />
+    <Toast message={toast.message} onundo={toast.undo ?? (toast.deleted ? undo : undefined)} ondismiss={() => (toast = null)} />
   {/key}
 {/if}
 
