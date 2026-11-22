@@ -76,6 +76,24 @@ describe('SpaceForm', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
+  it('refuses the name of another space, whatever its icon or letter case', async () => {
+    const onsave = vi.fn();
+    render(SpaceForm, { heading: 'New space', taken: ['Home', 'Work'], onsave, oncancel: () => {} });
+    await fireEvent.input(nameField(), { target: { value: ' work' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('There\'s already a space called “Work”');
+    expect(nameField()).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await fireEvent.submit(nameField());
+    await fireEvent.input(nameField(), { target: { value: '🏠 home' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('There\'s already a space called “Home”');
+    await fireEvent.submit(nameField());
+    expect(onsave).not.toHaveBeenCalled();
+    await fireEvent.input(nameField(), { target: { value: 'Homework' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    await save();
+    expect(onsave).toHaveBeenCalledWith(null, 'Homework');
+  });
+
   it('starts from the current icon and name when renaming', async () => {
     const onsave = vi.fn();
     render(SpaceForm, { heading: 'Rename space', emoji: '💼', name: 'Work', onsave, oncancel: () => {} });

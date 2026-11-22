@@ -37,3 +37,26 @@ export async function restore(snapshot: BookmarkNode): Promise<string> {
   await moveMeta(ids);
   return ids.get(snapshot.id)!;
 }
+
+/** What `merge` did, for `unmerge`: the deleted folder, and the IDs of what was in it, in order. */
+export interface Merged {
+  folder: BookmarkNode;
+  children: string[];
+}
+
+/**
+ * Moves everything in folder `id` to the end of folder `into`, in order, then deletes the
+ * empty folder. Nothing in it is deleted, even links `into` already has.
+ */
+export async function merge(id: string, into: string): Promise<Merged> {
+  const children = (await browser.bookmarks.getChildren(id)).map((child) => child.id);
+  for (const child of children) await browser.bookmarks.move(child, { parentId: into });
+  return { folder: await remove(id), children };
+}
+
+/** Undoes `merge`: recreates the folder at its old position and moves its things back. Returns its new ID. */
+export async function unmerge({ folder, children }: Merged): Promise<string> {
+  const id = await restore(folder);
+  for (const child of children) await browser.bookmarks.move(child, { parentId: id });
+  return id;
+}

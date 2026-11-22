@@ -2,9 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import NewCategory from '@/components/NewCategory.svelte';
 
-const setup = async () => {
+const setup = async (taken: string[] = []) => {
   const oncreate = vi.fn();
-  render(NewCategory, { oncreate });
+  render(NewCategory, { oncreate, taken });
   await fireEvent.click(screen.getByRole('button', { name: '+ New category' }));
   return { oncreate, name: screen.getByRole('textbox', { name: 'Category name' }) };
 };
@@ -29,6 +29,20 @@ describe('NewCategory', () => {
     await fireEvent.input(again, { target: { value: 'Docs' } });
     await fireEvent.submit(again);
     expect(oncreate).toHaveBeenLastCalledWith('Docs');
+  });
+
+  it('refuses the name of a category already in the space, whatever its letter case', async () => {
+    const { oncreate, name } = await setup(['Unsorted', 'Reading']);
+    await fireEvent.input(name, { target: { value: 'reading ' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('There\'s already a category called “Reading”');
+    expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
+    await fireEvent.submit(name);
+    expect(oncreate).not.toHaveBeenCalled();
+    expect(name).toBeInTheDocument();
+    await fireEvent.input(name, { target: { value: 'Reading list' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    await fireEvent.submit(name);
+    expect(oncreate).toHaveBeenCalledWith('Reading list');
   });
 
   it('closes without creating on Cancel or Escape', async () => {

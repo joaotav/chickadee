@@ -295,6 +295,7 @@ Verify: change every setting, open a new tab, the choices stuck. On a second com
 - New space from the "+" tab. Rename and delete a space from the ⋯ in its tab, shown on the selected tab only. Deleting a space that holds categories or bookmarks asks first, naming how many of each.
 - New category button. Add link form inside a category with URL and optional title. The title defaults to the URL's hostname.
 - Inline rename for categories. A link's Edit bookmark opens the add link form with its URL and title filled in (#82). Enter saves, Escape cancels.
+- No two spaces, and no two categories in one space, share a name: the forms refuse a taken one, ignoring the space's icon and letter case (#92).
 - Delete with an undo toast lasting 10 seconds, paused while the pointer is over it. Undo recreates the snapshotted subtree at its original position and moves its `collapsed` and `icon:` metadata to the new IDs. Only the most recent delete is undoable.
 - "Open all" on a category opens its links in new background tabs, asking first if there are more than 10.
 
@@ -306,7 +307,7 @@ Verify: delete a category with nested links, undo, the structure and collapse st
 - `svelte-dnd-action` updates the UI right away. On drop, call `bookmarks.move()`. The resulting event refetches and settles the real state.
 - Category zones and link zones use different `type` values so a category can't be dropped into a link list.
 - Keyboard dragging works through `svelte-dnd-action`'s built-in support.
-- To another space, **Move to…** in a category's or link's **⋯** menu lists the places, with a search field, and moves to the end of the one picked. Undo moves it back with the position from `bookmarks.position()` (#59).
+- To another space, **Move to…** in a category's or link's **⋯** menu lists the places, with a search field, and moves to the end of the one picked. Undo moves it back with the position from `bookmarks.position()` (#59). A category moving to a space with one of the same name asks on its card to merge them: its links go to the end of the other, the empty folder is deleted, and Undo recreates it and moves them back (#92).
 
 Verify: move a link down within its own category, then up, then into another category, in both browsers. The browser's bookmark manager shows the same order. Write down whether `bookmarks.move()` index semantics differ between Firefox and Chrome when moving down within the same parent, and handle it in `lib/bookmarks.ts` if they do.
 

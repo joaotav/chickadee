@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import { slide } from 'svelte/transition';
   import { outside } from '@/lib/outside';
-  import type { Link } from '@/lib/tree';
+  import { sameName, type Link } from '@/lib/tree';
   import AddLink from './AddLink.svelte';
   import Grip from './Grip.svelte';
   import InlineInput from './InlineInput.svelte';
@@ -17,6 +17,7 @@
     collapsed,
     ontoggle,
     onrename,
+    taken = [],
     ondelete,
     onopenall,
     onadd,
@@ -35,6 +36,8 @@
     ontoggle: () => void;
     /** Without these, the category can't be renamed, deleted or moved, like the "Unsorted" card. */
     onrename?: (title: string) => void;
+    /** The names of the other categories in its space, which it can't be renamed to. */
+    taken?: string[];
     ondelete?: () => void;
     /** Receives the URLs to open, after asking first when there are many. */
     onopenall: (urls: string[]) => void;
@@ -43,9 +46,13 @@
     ondeletelink: (link: Link) => void;
     /** A link dropped into this card, to go before `before`, or at the end without it. */
     onmovelink: (id: string, before: string | undefined) => void;
-    /** The spaces the category can move to, and moving it to one. */
+    /**
+     * The spaces the category can move to, and moving it to one. When that space has a
+     * category of the same name, `onmove` returns a question instead, and the merge to do
+     * if the answer is Merge.
+     */
     spaces?: PlaceGroup[];
-    onmove?: (spaceId: string) => void;
+    onmove?: (spaceId: string) => { question: string; detail: string; merge: () => void } | undefined;
     /** The categories its links can move to, by space, and moving a link to one. */
     linkPlaces?: PlaceGroup[];
     onmovelinkto?: (link: Link, categoryId: string) => void;
@@ -79,16 +86,23 @@
   const CONFIRM_OVER = 10;
   // Only web links open, the same as clicking them.
   const urls = $derived(links.filter((link) => link.openable).map((link) => link.url));
-  let confirming = $state(false);
+  // A question asked on the card before acting, with a button to go ahead and one to cancel.
+  // One with a detail, saying why it asks, shows as a heading with the detail under it.
+  let asking = $state<{ label: string; question: string; detail?: string; answer: string; onanswer: () => void } | null>(null);
 
   function openAll() {
-    if (urls.length > CONFIRM_OVER) confirming = true;
-    else onopenall(urls);
+    if (urls.length > CONFIRM_OVER) {
+      asking = { label: 'Open all bookmarks', question: `Open ${urls.length} tabs?`, answer: 'Open', onanswer: () => onopenall(urls) };
+    } else {
+      onopenall(urls);
+    }
   }
 
-  function confirmOpen() {
-    confirming = false;
-    onopenall(urls);
+  function moveTo(spaceId: string) {
+    const merging = onmove?.(spaceId);
+    if (merging) {
+      asking = { label: `Merge ${title}`, question: merging.question, detail: merging.detail, answer: 'Merge', onanswer: merging.merge };
+    }
   }
 
   const focus = (button: HTMLButtonElement) => button.focus();
@@ -108,7 +122,7 @@
   const items = $derived([
     ...(urls.length > 0 ? [{ label: 'Open all bookmarks', onselect: openAll }] : []),
     ...(onrename ? [{ label: 'Rename', onselect: () => (renaming = true) }] : []),
-    ...(onmove && spaces.length > 0 ? [{ label: 'Move to…', places: { groups: spaces, onpick: onmove } }] : []),
+    ...(onmove && spaces.length > 0 ? [{ label: 'Move to…', places: { groups: spaces, onpick: moveTo } }] : []),
     ...(ondelete ? [{ label: 'Delete', onselect: ondelete, danger: true }] : []),
   ]);
 </script>
@@ -123,6 +137,8 @@
         value={title}
         label="Category name"
         onsave={(text) => {
+          const clash = taken.find((other) => sameName(other, text));
+          if (clash) return `There's already a category called “${clash}”`;
           onrename?.(text);
           renaming = false;
         }}
@@ -143,24 +159,42 @@
       {/if}
     {/if}
   </div>
-  {#if confirming}
+  {#if asking}
+    {@const { label, question, detail, answer, onanswer } = asking}
     <!-- The listener catches Escape from the buttons inside, which are interactive. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="confirm"
+      class:detailed={detail}
       role="group"
-      aria-label="Open all bookmarks"
-      {@attach outside(() => (confirming = false))}
+      aria-label={label}
+      {@attach outside(() => (asking = null))}
       onkeydown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation();
-          confirming = false;
+          asking = null;
         }
       }}
     >
-      <span>Open {urls.length} tabs?</span>
-      <button class="primary" onclick={confirmOpen} {@attach focus}>Open</button>
-      <button onclick={() => (confirming = false)}>Cancel</button>
+      {#if detail}
+        <strong>{question}</strong>
+        <span class="detail">{detail}</span>
+      {:else}
+        <span class="question">{question}</span>
+      {/if}
+      <span class="answers">
+        <button
+          class="primary"
+          onclick={() => {
+            onanswer();
+            asking = null;
+          }}
+          {@attach focus}
+        >
+          {answer}
+        </button>
+        <button onclick={() => (asking = null)}>Cancel</button>
+      </span>
     </div>
   {/if}
   {#if !collapsed}
@@ -326,17 +360,44 @@
   .add {
     margin-top: var(--row-gap);
   }
+  /* Takes the card's width without widening it. */
   .confirm {
     display: flex;
     align-items: center;
     gap: 6px;
+    width: 0;
+    min-width: 100%;
     margin-top: 8px;
     padding: 6px 6px 6px 10px;
     border: 1px solid var(--accent);
     border-radius: 8px;
   }
-  .confirm span {
+  .confirm .question {
     flex: 1;
+  }
+  .confirm .answers {
+    display: flex;
+    gap: 6px;
+  }
+  /* A heading and the detail under it, then the buttons on a row of their own. */
+  .confirm.detailed {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 8px 8px 10px;
+    line-height: 1.4;
+  }
+  .confirm.detailed strong {
+    font-weight: 600;
+  }
+  .confirm .detail {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .confirm.detailed .answers {
+    justify-content: flex-end;
+    margin-top: 8px;
   }
   .confirm button {
     width: auto;

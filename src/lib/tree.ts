@@ -92,6 +92,9 @@ export function splitEmoji(title: string): { emoji: string | null; name: string 
 /** The folder name for a space: its emoji, if it has one, then its name. */
 export const joinEmoji = (emoji: string | null, name: string) => (emoji ? `${emoji} ${name}` : name);
 
+/** Whether two space or category names count as the same name: letter case doesn't matter. */
+export const sameName = (a: string, b: string) => a.trim().localeCompare(b.trim(), undefined, { sensitivity: 'accent' }) === 0;
+
 /**
  * Converts the Workspace folder's subtree into spaces. Each folder in Workspace is a space,
  * each folder in a space is a category. Links directly in Workspace go to an extra

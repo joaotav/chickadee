@@ -84,6 +84,21 @@ describe('CategoryCard', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 
+  it('refuses to be renamed to the name of another category in its space', async () => {
+    const onrename = vi.fn();
+    render(CategoryCard, { ...props, taken: ['Docs'], onrename, ondelete: () => {} });
+    await fireEvent.click(screen.getByRole('button', { name: 'Actions for Repos' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    const field = screen.getByRole('textbox', { name: 'Category name' });
+    await fireEvent.input(field, { target: { value: 'DOCS' } });
+    await fireEvent.keyDown(field, { key: 'Enter' });
+    expect(screen.getByText('There\'s already a category called “Docs”')).toHaveRole('alert');
+    expect(onrename).not.toHaveBeenCalled();
+    await fireEvent.input(field, { target: { value: 'repos' } });
+    await fireEvent.keyDown(field, { key: 'Enter' });
+    expect(onrename).toHaveBeenCalledWith('repos');
+  });
+
   it('passes link edits on with the link\'s ID', async () => {
     const onupdatelink = vi.fn();
     render(CategoryCard, { ...props, onupdatelink });
@@ -162,6 +177,35 @@ describe('CategoryCard', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Move to…' }));
     await fireEvent.click(screen.getByRole('button', { name: '🏠 Home' }));
     expect(onmove).toHaveBeenCalledWith('s2');
+  });
+
+  it('asks before merging into a category of the same name in the space it moves to', async () => {
+    const merge = vi.fn();
+    const onmove = vi.fn(() => ({ question: 'Merge with 🏠 Home › Repos?', detail: 'Home already has a category with this name.', merge }));
+    const spaces = [{ places: [{ id: 's2', label: '🏠 Home' }] }];
+    render(CategoryCard, { ...props, onrename: () => {}, ondelete: () => {}, spaces, onmove });
+    const pick = async () => {
+      await fireEvent.click(screen.getByRole('button', { name: 'Actions for Repos' }));
+      await fireEvent.click(screen.getByRole('button', { name: 'Move to…' }));
+      await fireEvent.click(screen.getByRole('button', { name: '🏠 Home' }));
+      return screen.getByRole('group', { name: 'Merge Repos' });
+    };
+
+    let question = await pick();
+    expect(question).toHaveTextContent('Merge with 🏠 Home › Repos?');
+    expect(question).toHaveTextContent('Home already has a category with this name.');
+    expect(screen.getByRole('button', { name: 'Merge' })).toHaveFocus();
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(question).not.toBeInTheDocument();
+    question = await pick();
+    await fireEvent.keyDown(question, { key: 'Escape' });
+    expect(question).not.toBeInTheDocument();
+    expect(merge).not.toHaveBeenCalled();
+
+    question = await pick();
+    await fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    expect(merge).toHaveBeenCalledOnce();
+    expect(question).not.toBeInTheDocument();
   });
 
   it('offers Move to… only when there is another space', async () => {

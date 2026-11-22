@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { getCollapsed, setCollapsed } from '@/lib/meta';
 import type { BookmarkNode } from '@/lib/node';
-import { remove, restore } from '@/lib/undo';
+import { merge, remove, restore, unmerge } from '@/lib/undo';
 import { installFakeBookmarks } from '../fixtures/fake-bookmarks';
 import { firefoxRoot, folder, link, separator } from '../fixtures/trees';
 
@@ -87,5 +87,27 @@ describe('restore', () => {
     expect(icons).toHaveLength(1);
     expect(icons[0]![0]).not.toBe('icon:l1');
     expect(icons[0]![1]).toBe('https://github.com/favicon.ico');
+  });
+});
+
+describe('merge', () => {
+  const ids = (node: BookmarkNode | undefined) => node!.children!.map((child) => child.id);
+
+  it('moves everything in a folder to the end of another, in order, and deletes the empty folder', async () => {
+    const { find } = setup();
+    await merge('c1', 'c2');
+    expect(find('c1')).toBeUndefined();
+    expect(ids(find('c2'))).toEqual(['l3', 'l1', 'x1', 'sub']);
+    expect(ids(find('sub'))).toEqual(['l2']);
+  });
+
+  it('is undone by unmerge: the folder comes back where it was, with its things back in it, in order', async () => {
+    const { find } = setup();
+    await setCollapsed(['c1']);
+    const id = await unmerge(await merge('c1', 'c2'));
+    expect(ids(find('s1'))).toEqual(['loose', id, 'c2']);
+    expect(ids(find(id))).toEqual(['l1', 'x1', 'sub']);
+    expect(ids(find('c2'))).toEqual(['l3']);
+    expect(await getCollapsed()).toEqual([id]);
   });
 });
