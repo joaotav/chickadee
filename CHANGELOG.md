@@ -21,6 +21,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 ### Bug fixes
 
 - **Messages at the bottom of the page no longer stretch across it for a long name.** They stop at 480 pixels and cut the name short, and hovering shows the whole message
+- **The popup keeps a long category name to one line,** in the "Already in" note and after saving, cutting it short. Hovering shows it whole
 
 ## 0.2.0 - 2026-11-17
 
