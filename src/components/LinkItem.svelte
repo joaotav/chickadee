@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { outside } from '@/lib/outside';
   import { proto } from '@/lib/prototype.svelte';
   import { defaultTitle, type Link } from '@/lib/tree';
   import Grip from './Grip.svelte';
@@ -28,6 +29,8 @@
   const duplicate = $derived(alsoIn.length > 0);
   // Added to the tooltip, and read out after the title.
   const alsoText = $derived(duplicate ? `Also in ${alsoIn.join(', ')}` : '');
+  // The box listing the other places, opened by clicking the mark.
+  let showing = $state(false);
   const tooltip = $derived([link.title, link.url, alsoText].filter(Boolean).join('\n'));
 
   let editing = $state(false);
@@ -53,11 +56,7 @@
 </script>
 
 {#snippet content()}
-  {#if duplicate && proto.variant === 'c'}
-    <span class="icon-with-dot"><LinkIcon {link} /><span class="dot" aria-hidden="true"></span></span>
-  {:else}
-    <LinkIcon {link} />
-  {/if}
+  <LinkIcon {link} />
   <span class="text">
     <span class="title">{link.title}</span>
     <!-- Shown only with the "Title and URL" setting. The tooltip already gives the URL to screen readers. -->
@@ -65,19 +64,12 @@
   </span>
   {#if duplicate}
     <span class="visually-hidden">. {alsoText}</span>
-    {#if proto.variant === 'a'}
-      <span class="count" aria-hidden="true">×{alsoIn.length + 1}</span>
-    {:else if proto.variant === 'b'}
-      <!-- Lucide's "copy" icon, https://lucide.dev, ISC license. -->
-      <svg class="copies" viewBox="0 0 24 24" aria-hidden="true">
-        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-      </svg>
-    {/if}
   {/if}
 {/snippet}
 
-<div class="row" bind:this={row}>
+<svelte:window onkeydown={(event) => showing && event.key === 'Escape' && (showing = false)} />
+
+<div class="row" class:duplicate={duplicate && !editing} bind:this={row}>
   {#if editing}
     <LinkForm url={link.url} title={link.title} submit="Save" onsave={save} oncancel={() => (editing = false)} />
   {:else if link.openable}
@@ -94,6 +86,49 @@
   {/if}
   {#if !editing}
     <Grip label="Move {link.title}" />
+  {/if}
+  {#if duplicate && !editing}
+    <!-- PROTOTYPE (#45): the mark, a button of its own beside the link, since a link can't hold one. -->
+    <div class="dup" class:open={showing} {@attach outside(() => (showing = false))}>
+      <button
+        class="mark {proto.variant}"
+        title="Saved {alsoIn.length + 1} times"
+        aria-label="Saved {alsoIn.length + 1} times"
+        aria-expanded={showing}
+        onclick={() => (showing = !showing)}
+      >
+        {#if proto.variant === 'a'}
+          ×{alsoIn.length + 1}
+        {:else if proto.variant === 'b'}
+          <!-- Lucide's "triangle-alert" icon, https://lucide.dev, ISC license. -->
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
+        {:else if proto.variant === 'c'}
+          ?
+        {:else}
+          <!-- Lucide's "copy" icon, https://lucide.dev, ISC license. -->
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+          </svg>
+          {alsoIn.length + 1}
+        {/if}
+      </button>
+      {#if showing}
+        <div class="also" role="dialog" aria-label="Also saved in">
+          <strong>Also saved in</strong>
+          <ul>
+            {#each alsoIn as place, i (i)}
+              <li>{place}</li>
+            {/each}
+          </ul>
+          <p>To remove a copy, choose Delete in its ⋯ menu.</p>
+        </div>
+      {/if}
+    </div>
   {/if}
   {#if onupdate && !editing}
     <Menu
@@ -211,39 +246,93 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  .count {
-    flex-shrink: 0;
+  /* The mark sits near the end of the row, just left of where the ⋯ button shows on hover,
+     so it never moves out from under the pointer. */
+  .row.duplicate .link {
+    padding-right: 64px;
+  }
+  .dup {
+    position: absolute;
+    right: 32px;
+  }
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+    border-radius: 5px;
+    background: var(--row);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .row:hover .mark {
+    background: var(--row-hover);
+  }
+  .mark:hover,
+  .open .mark {
+    color: var(--fg);
+  }
+  .mark.a {
+    height: 16px;
+    min-width: 0;
     padding: 0 5px;
     border: 1px solid var(--border);
     border-radius: 999px;
-    color: var(--muted);
     font-size: 10px;
-    line-height: 14px;
   }
-  .copies {
-    flex-shrink: 0;
+  .mark.c {
+    width: 16px;
+    min-width: 0;
+    height: 16px;
+    padding: 0;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .mark svg {
     width: 13px;
     height: 13px;
-    margin-left: auto;
     fill: none;
-    stroke: var(--muted);
+    stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .icon-with-dot {
-    position: relative;
-    display: flex;
-    flex-shrink: 0;
-  }
-  .dot {
+  .also {
     position: absolute;
-    top: -3px;
-    right: -3px;
-    width: 7px;
-    height: 7px;
-    border: 1.5px solid var(--row);
-    border-radius: 50%;
-    background: var(--accent);
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: max-content;
+    min-width: 180px;
+    max-width: 300px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    box-shadow: 0 8px 24px #0006;
+    font-size: 12px;
+  }
+  .also ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .also li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .also p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
   }
 </style>

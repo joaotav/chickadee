@@ -2,9 +2,10 @@
 // the prototype/duplicate-mark branch.
 
 export const VARIANTS = {
-  a: { name: 'Count after the title', hint: 'A small “×2” pill right after the title' },
-  b: { name: 'Copy icon at the end', hint: 'Two squares at the right end; the ⋯ button covers it on hover' },
-  c: { name: 'Dot on the site icon', hint: 'An accent dot on the corner of the site icon' },
+  a: { name: 'Count', hint: 'A “×2” pill at the end of the row; click it for the other places' },
+  b: { name: 'Warning sign', hint: 'A warning triangle at the end of the row; click it for the other places' },
+  c: { name: 'Question mark', hint: 'A “?” in a circle at the end of the row; click it for the other places' },
+  d: { name: 'Copy icon and count', hint: 'Two squares and “2” at the end of the row; click it for the other places' },
 } as const;
 
 export type Variant = keyof typeof VARIANTS;
