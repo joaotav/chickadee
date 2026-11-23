@@ -5,6 +5,7 @@
   import CategoryCard from '@/components/CategoryCard.svelte';
   import DeleteSpace from '@/components/DeleteSpace.svelte';
   import NewCategory from '@/components/NewCategory.svelte';
+  import PrototypeSwitcher from '@/components/PrototypeSwitcher.svelte';
   import SearchBox from '@/components/SearchBox.svelte';
   import SettingsPanel from '@/components/SettingsPanel.svelte';
   import { readFile, toHtml, type BookmarksFile } from '@/lib/bookmarks-file';
@@ -174,6 +175,38 @@
   // which holds links only, and their categories.
   const spaceLabel = (space: Space) => joinEmoji(space.emoji, space.name);
   const realSpaces = $derived((spaces ?? []).filter(isRealSpace));
+
+  // PROTOTYPE (#45): the other places each link saved more than once is in, by link ID.
+  // Addresses compare the same way as the popup's "Already in" note.
+  const urlKey = (url: string) => {
+    try {
+      return new URL(url).href;
+    } catch {
+      return url;
+    }
+  };
+  const alsoIn = $derived.by(() => {
+    const copies = new Map<string, { id: string; place: string }[]>();
+    const add = (links: Link[], place: string) => {
+      for (const link of links) {
+        const key = urlKey(link.url);
+        copies.set(key, [...(copies.get(key) ?? []), { id: link.id, place }]);
+      }
+    };
+    for (const space of spaces ?? []) {
+      add(space.unsorted, isRealSpace(space) ? `${spaceLabel(space)} › ${UNSORTED}` : UNSORTED);
+      for (const category of space.categories) add(category.links, `${spaceLabel(space)} › ${category.title}`);
+    }
+    const result = new Map<string, string[]>();
+    if (settings.duplicates === 'off') return result;
+    for (const list of copies.values()) {
+      if (list.length < 2) continue;
+      for (const copy of list) {
+        result.set(copy.id, list.filter((other) => other !== copy).map((other) => (other.place === copy.place ? 'this category' : other.place)));
+      }
+    }
+    return result;
+  });
   const otherSpaces = $derived<PlaceGroup[]>(
     realSpaces.length > 1
       ? [{ places: realSpaces.filter((space) => space.id !== active?.id).map((space) => ({ id: space.id, label: spaceLabel(space) })) }]
@@ -422,6 +455,7 @@
               onmove={(spaceId) => moveCategory(category, spaceId)}
               linkPlaces={categories}
               onmovelinkto={moveLink}
+              {alsoIn}
             />
           {:else if card.id === NEW_CATEGORY}
             <NewCategory oncreate={(title) => void create(active.id, title)} taken={categoryNames()} />
@@ -439,6 +473,7 @@
               onmovelink={(id, before) => moveItem(id, active.id, before)}
               linkPlaces={categories}
               onmovelinkto={moveLink}
+              {alsoIn}
             />
           {/if}
         </div>
@@ -446,6 +481,11 @@
     </div>
   {/if}
 </main>
+
+<!-- PROTOTYPE, only in development builds. -->
+{#if import.meta.env.DEV}
+  <PrototypeSwitcher />
+{/if}
 
 {#if toast}
   <!-- Keyed, so a new delete restarts the countdown. -->

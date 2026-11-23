@@ -28,6 +28,7 @@
     onmove,
     linkPlaces = [],
     onmovelinkto,
+    alsoIn = new Map(),
   }: {
     id: string;
     title: string;
@@ -56,6 +57,8 @@
     /** The categories its links can move to, by space, and moving a link to one. */
     linkPlaces?: PlaceGroup[];
     onmovelinkto?: (link: Link, categoryId: string) => void;
+    /** PROTOTYPE (#45): the other places each duplicated link is saved in, by link ID. */
+    alsoIn?: Map<string, string[]>;
   } = $props();
 
   // A link can move to any category but its own.
@@ -221,6 +224,7 @@
                 ondelete={() => ondeletelink(link)}
                 places={otherPlaces}
                 onmove={onmovelinkto && ((categoryId) => onmovelinkto(link, categoryId))}
+                alsoIn={alsoIn.get(link.id)}
               />
             </li>
           {/each}

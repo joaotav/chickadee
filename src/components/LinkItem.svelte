@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { proto } from '@/lib/prototype.svelte';
   import { defaultTitle, type Link } from '@/lib/tree';
   import Grip from './Grip.svelte';
   import LinkForm from './LinkForm.svelte';
@@ -11,6 +12,7 @@
     ondelete,
     places = [],
     onmove,
+    alsoIn = [],
   }: {
     link: Link;
     /** Changes the link's title, URL or both. Without it, the link can't be edited. */
@@ -19,7 +21,14 @@
     /** The categories the link can move to, by space, and moving it to one. */
     places?: PlaceGroup[];
     onmove?: (categoryId: string) => void;
+    /** PROTOTYPE (#45): the other places this link is saved in, when it's saved more than once. */
+    alsoIn?: string[];
   } = $props();
+
+  const duplicate = $derived(alsoIn.length > 0);
+  // Added to the tooltip, and read out after the title.
+  const alsoText = $derived(duplicate ? `Also in ${alsoIn.join(', ')}` : '');
+  const tooltip = $derived([link.title, link.url, alsoText].filter(Boolean).join('\n'));
 
   let editing = $state(false);
 
@@ -44,23 +53,39 @@
 </script>
 
 {#snippet content()}
-  <LinkIcon {link} />
+  {#if duplicate && proto.variant === 'c'}
+    <span class="icon-with-dot"><LinkIcon {link} /><span class="dot" aria-hidden="true"></span></span>
+  {:else}
+    <LinkIcon {link} />
+  {/if}
   <span class="text">
     <span class="title">{link.title}</span>
     <!-- Shown only with the "Title and URL" setting. The tooltip already gives the URL to screen readers. -->
     <span class="url" aria-hidden="true">{link.url.replace(/^https?:\/\//, '')}</span>
   </span>
+  {#if duplicate}
+    <span class="visually-hidden">. {alsoText}</span>
+    {#if proto.variant === 'a'}
+      <span class="count" aria-hidden="true">×{alsoIn.length + 1}</span>
+    {:else if proto.variant === 'b'}
+      <!-- Lucide's "copy" icon, https://lucide.dev, ISC license. -->
+      <svg class="copies" viewBox="0 0 24 24" aria-hidden="true">
+        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+      </svg>
+    {/if}
+  {/if}
 {/snippet}
 
 <div class="row" bind:this={row}>
   {#if editing}
     <LinkForm url={link.url} title={link.title} submit="Save" onsave={save} oncancel={() => (editing = false)} />
   {:else if link.openable}
-    <a class="link" href={link.url} title={`${link.title}\n${link.url}`} onmousedown={dragFromLink}>{@render content()}</a>
+    <a class="link" href={link.url} title={tooltip} onmousedown={dragFromLink}>{@render content()}</a>
   {:else}
     <span
       class="link disabled"
-      title={`${link.title}\n${link.url}\nOnly web links can be opened from this page.`}
+      title={`${tooltip}\nOnly web links can be opened from this page.`}
       role="presentation"
       onmousedown={dragFromLink}
     >
@@ -175,5 +200,50 @@
   }
   :global(:root[data-titles='with-url']) .url {
     display: block;
+  }
+
+  /* PROTOTYPE (#45): the duplicate marks. */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .count {
+    flex-shrink: 0;
+    padding: 0 5px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 14px;
+  }
+  .copies {
+    flex-shrink: 0;
+    width: 13px;
+    height: 13px;
+    margin-left: auto;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .icon-with-dot {
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+  }
+  .dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 7px;
+    height: 7px;
+    border: 1.5px solid var(--row);
+    border-radius: 50%;
+    background: var(--accent);
   }
 </style>
