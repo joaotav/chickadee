@@ -267,16 +267,15 @@
     height: 22px;
     padding: 0 4px;
     border-radius: 5px;
-    background: var(--row);
+    transition: background 0.15s;
     color: var(--muted);
     font-size: 11px;
     font-weight: 600;
   }
-  .row:hover .mark {
-    background: var(--row-hover);
-  }
+  /* See-through, so it shows the row's own color as the row lights up and fades. */
   .mark:hover,
   .open .mark {
+    background: var(--row-hover);
     color: var(--fg);
   }
   .mark.a {
