@@ -125,7 +125,6 @@
               <li>{place}</li>
             {/each}
           </ul>
-          <p>To remove a copy, choose Delete in its ⋯ menu.</p>
         </div>
       {/if}
     </div>
@@ -284,6 +283,11 @@
     border-radius: 999px;
     font-size: 10px;
   }
+  .mark.b,
+  .mark.b:hover,
+  .open .mark.b {
+    color: var(--danger);
+  }
   .mark.c {
     width: 16px;
     min-width: 0;
@@ -329,10 +333,5 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .also p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 11px;
   }
 </style>
