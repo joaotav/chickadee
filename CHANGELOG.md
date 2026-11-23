@@ -13,6 +13,10 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 - **Edit a bookmark's title and URL in one form,** from **Edit bookmark** in its **⋯** menu, which replaces **Rename** and **Edit URL**. The form is the same as **+ Add bookmark** ([#82](https://github.com/joaotav/chickadee/issues/82))
 - **Spaces, and categories in the same space, can't share a name.** **New space**, **Rename space**, **+ New category**, a category's **Rename** and the popup's **All tabs** say so when a name is taken, ignoring the space's icon and letter case. Moving a category to a space that already has one with its name asks to merge them, and **Undo** splits them again ([#92](https://github.com/joaotav/chickadee/issues/92))
 
+### Bug fixes
+
+- **Long names no longer stretch the popup's lists across the screen.** In the **Category** and **Space** lists, names longer than 40 characters are cut with "…", and hovering one shows it whole ([#95](https://github.com/joaotav/chickadee/issues/95))
+
 ## 0.3.0 - 2026-11-22
 
 Save all your open tabs as a session, move categories and bookmarks to another space, find links by the name of their space or category, and pick any emoji as a space's icon.
