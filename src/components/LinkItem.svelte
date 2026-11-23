@@ -155,6 +155,10 @@
   .row:not(:hover, :focus-within) > :global(.menu:not(.open)) {
     opacity: 0;
   }
+  /* PROTOTYPE (#45): the duplicate mark is a button of its own, so only it reacts to the pointer. */
+  .row:has(> .dup:hover) > :global(.menu:not(.open)) {
+    opacity: 0;
+  }
   /* The pointer drags the link itself, so the grip is only for the keyboard: it ignores the
      pointer and shows as an outline around the row when tabbed to. */
   .row > :global(.grip) {
