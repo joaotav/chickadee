@@ -152,7 +152,8 @@
     position: absolute;
     right: 6px;
   }
-  .row:not(:hover, :focus-within) > :global(.menu:not(.open)) {
+  /* Keyboard focus shows it too, but not the focus a click leaves on the duplicate mark. */
+  .row:not(:hover, :has(:focus-visible)) > :global(.menu:not(.open)) {
     opacity: 0;
   }
   /* PROTOTYPE (#45): the duplicate mark is a button of its own, so only it reacts to the pointer. */
