@@ -41,6 +41,18 @@ describe('SaveForm', () => {
     ]);
   });
 
+  it('cuts long space and category names in the list, keeping the full name in its tooltip', () => {
+    const long = 'Recipes and cooking ideas for the weekend, with a long name';
+    render(SaveForm, {
+      ...props,
+      spaces: [{ id: 's9', name: long, emoji: '🏠', unsorted: [], categories: [{ id: 'c9', title: long, links: [] }] }],
+    });
+    expect(document.querySelector('optgroup')!.label).toBe('🏠 Recipes and cooking ideas for the wee…');
+    const option = screen.getByRole('option');
+    expect(option).toHaveTextContent('Recipes and cooking ideas for the weeke…');
+    expect(option).toHaveAttribute('title', long);
+  });
+
   it('selects the last used category, or the first one when it is gone', () => {
     const { unmount } = render(SaveForm, { ...props, categoryId: 'c3' });
     expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('c3');

@@ -92,6 +92,15 @@ export function splitEmoji(title: string): { emoji: string | null; name: string 
 /** The folder name for a space: its emoji, if it has one, then its name. */
 export const joinEmoji = (emoji: string | null, name: string) => (emoji ? `${emoji} ${name}` : name);
 
+/**
+ * A name cut to `max` characters, ending in "…", for the browser's own dropdown lists, which
+ * grow as wide as their longest option. Cuts between whole graphemes, so emoji stay intact.
+ */
+export function shorten(name: string, max = 40): string {
+  const parts = [...graphemes.segment(name)].map((part) => part.segment);
+  return parts.length <= max ? name : `${parts.slice(0, max - 1).join('').trimEnd()}…`;
+}
+
 /** Whether two space or category names count as the same name: letter case doesn't matter. */
 export const sameName = (a: string, b: string) => a.trim().localeCompare(b.trim(), undefined, { sensitivity: 'accent' }) === 0;
 
