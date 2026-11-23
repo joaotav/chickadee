@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { sessionName } from '@/lib/session';
-  import { joinEmoji, sameName, UNSORTED, type Space } from '@/lib/tree';
+  import { joinEmoji, sameName, shorten, UNSORTED, type Space } from '@/lib/tree';
 
   let {
     spaces,
@@ -57,13 +57,16 @@
   <label>
     <span>Space</span>
     <select bind:value={picked} aria-label="Space">
+      <!-- Long names are cut, since the browser's list grows as wide as its longest option. -->
       {#each spaces as space (space.id)}
-        <option value={space.id}>{joinEmoji(space.emoji, space.name)}</option>
+        {@const full = joinEmoji(space.emoji, space.name)}
+        {@const label = shorten(full)}
+        <option value={space.id} title={label === full ? undefined : full}>{label}</option>
       {/each}
     </select>
   </label>
   {#if clash !== undefined}
-    <p class="message" role="alert">There's already a category called “{clash}” in <span class="space">{joinEmoji(space.emoji, space.name)}</span></p>
+    <p class="message" role="alert">There's already a category called “{clash}” in <span class="space">{shorten(joinEmoji(space.emoji, space.name))}</span></p>
   {/if}
   <div class="buttons">
     <button type="button" onclick={oncancel}>Cancel</button>

@@ -17,6 +17,17 @@ describe('SessionForm', () => {
     expect([name.selectionStart, name.selectionEnd]).toEqual([0, name.value.length]);
   });
 
+  it('cuts long space names in the list and the taken-name message, keeping the full name in the tooltip', async () => {
+    const long = 'Recipes and cooking ideas for the weekend, with a long name';
+    const category = { id: 'c3', title: 'Taken', links: [] };
+    render(SessionForm, { ...props, spaces: [...spaces, { id: 's3', name: long, emoji: '🏠', unsorted: [], categories: [category] }], spaceId: 's3' });
+    const options = screen.getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['💼 Work', 'Home', '🏠 Recipes and cooking ideas for the wee…']);
+    expect(options.map((option) => option.getAttribute('title'))).toEqual([null, null, `🏠 ${long}`]);
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Taken' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('There\'s already a category called “Taken” in 🏠 Recipes and cooking ideas for the wee…');
+  });
+
   it('starts on the given space, or the first one when it is gone', () => {
     const { unmount } = render(SessionForm, { ...props, spaceId: 's2' });
     expect(screen.getByRole('combobox', { name: 'Space' })).toHaveValue('s2');

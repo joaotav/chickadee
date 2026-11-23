@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultTitle, joinEmoji, placesOf, sameName, splitEmoji, toSpaces, toWebUrl, UNSORTED } from '@/lib/tree';
+import { defaultTitle, joinEmoji, placesOf, sameName, shorten, splitEmoji, toSpaces, toWebUrl, UNSORTED } from '@/lib/tree';
 import { folder, link, separator } from '../fixtures/trees';
 
 describe('splitEmoji', () => {
@@ -123,6 +123,27 @@ describe('joinEmoji', () => {
 
   it('uses the name alone without an emoji', () => {
     expect(joinEmoji(null, 'Work')).toBe('Work');
+  });
+});
+
+describe('shorten', () => {
+  it('leaves a name of up to 40 characters as it is', () => {
+    expect(shorten('Repos')).toBe('Repos');
+    expect(shorten('x'.repeat(40))).toBe('x'.repeat(40));
+  });
+
+  it('cuts a longer name to 40 characters, ending in an ellipsis', () => {
+    const cut = shorten('Recipes and cooking ideas for the weekend, with a long name');
+    expect(cut).toBe('Recipes and cooking ideas for the weeke…');
+    expect([...cut]).toHaveLength(40);
+  });
+
+  it('drops spaces before the ellipsis', () => {
+    expect(shorten(`${'x'.repeat(38)} and more`)).toBe(`${'x'.repeat(38)}…`);
+  });
+
+  it('never cuts through an emoji', () => {
+    expect(shorten(`${'x'.repeat(38)}🇧🇷🛠️ more`)).toBe(`${'x'.repeat(38)}🇧🇷…`);
   });
 });
 

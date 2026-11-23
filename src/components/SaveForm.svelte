@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { defaultTitle, joinEmoji, placesOf, toWebUrl, type Space } from '@/lib/tree';
+  import { defaultTitle, joinEmoji, placesOf, shorten, toWebUrl, type Space } from '@/lib/tree';
 
   let {
     url: initialUrl,
@@ -65,9 +65,11 @@
     <span>Category</span>
     <select bind:value={categoryId}>
       {#each groups as space (space.id)}
-        <optgroup label={joinEmoji(space.emoji, space.name)}>
+        <!-- Long names are cut, since the browser's list grows as wide as its longest option. -->
+        <optgroup label={shorten(joinEmoji(space.emoji, space.name))}>
           {#each space.categories as category (category.id)}
-            <option value={category.id}>{category.title}</option>
+            {@const label = shorten(category.title)}
+            <option value={category.id} title={label === category.title ? undefined : category.title}>{label}</option>
           {/each}
         </optgroup>
       {/each}
