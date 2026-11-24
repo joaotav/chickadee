@@ -75,6 +75,7 @@ A settings panel lets the user change how the page looks. The MVP ships the Grid
 | Density | Comfortable, Compact |
 | Titles | One line, up to two lines, title + URL |
 | Card sizing | Fixed width: cards share a column width. Fit content: each card is as wide as its longest link, between the card width and twice that. Masonry always uses fixed width. |
+| Links saved more than once | Mark them (default): a red warning sign on each copy, which lists the other places when clicked (#45). Don't mark. |
 
 The card width is one value, 260px to start, tuned once the real page exists. There is no setting for it and no way to widen a single card. Long titles are handled by fit content, or by the two-line title option in fixed mode.
 
@@ -289,6 +290,7 @@ Verify: collapse a category, open a new tab, it's still collapsed. A collapsed s
 - Themes are sets of CSS custom properties selected by a `data-theme` attribute. Density, titles and sizing work the same way.
 - Read and write `settings` in `storage.sync`, and apply changes from `storage.onChanged` so other open tabs update.
 - A Bookmarks section in the panel exports and imports the Workspace as a bookmarks HTML file, and the empty page offers the import too (#41, ADR 0007).
+- A link saved more than once shows a red warning sign, left of its **⋯** button. Clicking it lists the other places it's saved in, compared the way the popup's "Already in" note compares addresses. The setting can turn the marks off (#45).
 
 Verify: change every setting, open a new tab, the choices stuck. On a second computer signed in to the same account, with Add-ons sync on, the settings arrive after a "Sync Now".
 
