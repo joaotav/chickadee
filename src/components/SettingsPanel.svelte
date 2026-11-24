@@ -30,6 +30,7 @@
     { key: 'density', label: 'Density' },
     { key: 'titles', label: 'Titles' },
     { key: 'sizing', label: 'Card sizing' },
+    { key: 'duplicates', label: 'Links saved more than once' },
   ];
 
   let open = $state(false);

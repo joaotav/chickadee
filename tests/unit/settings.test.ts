@@ -17,6 +17,7 @@ const custom: Settings = {
   density: 'compact',
   titles: 'with-url',
   sizing: 'fixed',
+  duplicates: 'off',
 };
 
 describe('toSettings', () => {
@@ -25,13 +26,14 @@ describe('toSettings', () => {
     expect(toSettings('oops')).toEqual(DEFAULTS);
   });
 
-  it('defaults are Grid, Neutral dark, Comfortable, one-line titles and fit content', () => {
+  it('defaults are Grid, Neutral dark, Comfortable, one-line titles, fit content and marked duplicates', () => {
     expect(DEFAULTS).toEqual({
       layout: 'grid',
       theme: 'neutral-dark',
       density: 'comfortable',
       titles: 'one-line',
       sizing: 'fit-content',
+      duplicates: 'mark',
     });
   });
 
