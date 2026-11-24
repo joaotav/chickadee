@@ -148,9 +148,11 @@
     align-items: center;
   }
   /* The menu button sits over the end of the row and shows on hover or keyboard focus. */
+  /* The ⋯ button fades in and out with the row's highlight, at the same speed. */
   .row > :global(.menu) {
     position: absolute;
     right: 6px;
+    transition: opacity 0.15s;
   }
   /* Keyboard focus shows it too, but not the focus a click leaves on the duplicate mark. */
   .row:not(:hover, :has(:focus-visible)) > :global(.menu:not(.open)) {
@@ -195,6 +197,7 @@
     color: var(--fg);
     text-decoration: none;
     white-space: nowrap;
+    transition: background 0.15s;
   }
   a.link:hover {
     background: var(--row-hover);
@@ -270,10 +273,10 @@
     color: var(--muted);
     font-size: 11px;
     font-weight: 600;
+    transition: background 0.15s;
   }
-  /* See-through, so it shows the row's own color. Hover colors in the row change at once,
-     with no fade: the link, the mark and the ⋯ button switch in the same frame, where fading
-     ones darkened for a moment when the pointer moved between them. */
+  /* See-through, so it shows the row's own color. Its own highlight fades like the row's and
+     the ⋯ button. */
   .mark:hover,
   .open .mark {
     background: var(--row-hover);
