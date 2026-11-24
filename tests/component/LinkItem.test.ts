@@ -60,6 +60,18 @@ describe('LinkItem', () => {
     expect(screen.getByText('G')).toBeInTheDocument();
   });
 
+  it('marks a link saved more than once, but not while it is being edited', async () => {
+    render(LinkItem, { link: web, onupdate: () => {}, alsoIn: ['💼 Work › Docs'] });
+    expect(screen.getByRole('button', { name: 'Saved 2 times' })).toBeInTheDocument();
+    await edit('GitHub');
+    expect(screen.queryByRole('button', { name: 'Saved 2 times' })).toBeNull();
+  });
+
+  it('has no mark when it is saved once', () => {
+    render(LinkItem, { link: web });
+    expect(screen.queryByRole('button', { name: /^Saved/ })).toBeNull();
+  });
+
   it('can only be edited when it gets an onupdate handler', () => {
     render(LinkItem, { link: web });
     expect(screen.queryByRole('button', { name: 'Actions for GitHub' })).toBeNull();
