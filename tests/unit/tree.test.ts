@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultTitle, joinEmoji, placesOf, sameName, shorten, splitEmoji, toSpaces, toWebUrl, UNSORTED } from '@/lib/tree';
+import { defaultTitle, joinEmoji, otherCopies, placesOf, sameName, shorten, splitEmoji, toSpaces, toWebUrl, UNSORTED } from '@/lib/tree';
 import { folder, link, separator } from '../fixtures/trees';
 
 describe('splitEmoji', () => {
@@ -216,5 +216,48 @@ describe('saved icons and places', () => {
     expect(placesOf(spaces, 'https://example.com')).toEqual([`Work › ${UNSORTED}`]);
     expect(placesOf(spaces, 'https://example.org/')).toEqual([UNSORTED]);
     expect(placesOf(spaces, 'https://gitlab.com/')).toEqual([]);
+  });
+});
+
+describe('otherCopies', () => {
+  it('names the other places of each link saved more than once, with the space icon', () => {
+    const spaces = toSpaces(
+      folder('w', 'Workspace', [
+        folder('s1', '💼 Work', [
+          link('loose', 'Loose', 'https://github.com'),
+          folder('c1', 'Repos', [link('l1', 'GitHub', 'https://github.com/'), link('l2', 'GitLab', 'https://gitlab.com/')]),
+          folder('c2', 'Docs', [folder('old', 'Old', [link('l3', 'GitHub again', 'https://github.com/')])]),
+        ]),
+        folder('s2', 'Home', [folder('c3', 'Media', [link('l4', 'GitHub', 'https://github.com/')])]),
+        link('top', 'Top', 'https://github.com/'),
+      ]),
+    );
+    expect(otherCopies(spaces)).toEqual(
+      new Map([
+        ['loose', ['💼 Work › Repos', '💼 Work › Docs', 'Home › Media', UNSORTED]],
+        ['l1', [`💼 Work › ${UNSORTED}`, '💼 Work › Docs', 'Home › Media', UNSORTED]],
+        ['l3', [`💼 Work › ${UNSORTED}`, '💼 Work › Repos', 'Home › Media', UNSORTED]],
+        ['l4', [`💼 Work › ${UNSORTED}`, '💼 Work › Repos', '💼 Work › Docs', UNSORTED]],
+        ['top', [`💼 Work › ${UNSORTED}`, '💼 Work › Repos', '💼 Work › Docs', 'Home › Media']],
+      ]),
+    );
+  });
+
+  it('calls a copy in the same category "this category"', () => {
+    const spaces = toSpaces(
+      folder('w', 'Workspace', [
+        folder('s1', 'Work', [folder('c1', 'Repos', [link('l1', 'GitHub', 'https://github.com/'), link('l2', 'GitHub', 'https://github.com/')])]),
+      ]),
+    );
+    expect(otherCopies(spaces)).toEqual(
+      new Map([
+        ['l1', ['this category']],
+        ['l2', ['this category']],
+      ]),
+    );
+  });
+
+  it('is empty when every link is saved once', () => {
+    expect(otherCopies(toSpaces(folder('w', 'Workspace', [link('l1', 'A', 'https://a.example/'), link('l2', 'B', 'https://b.example/')])))).toEqual(new Map());
   });
 });

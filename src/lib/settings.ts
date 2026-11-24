@@ -13,6 +13,7 @@ export const OPTIONS = {
   density: { comfortable: 'Comfortable', compact: 'Compact' },
   titles: { 'one-line': 'One line', 'two-lines': 'Up to two lines', 'with-url': 'Title and URL' },
   sizing: { 'fit-content': 'Fit content', fixed: 'Fixed width' },
+  duplicates: { mark: 'Mark them', off: 'Don’t mark' },
 } as const;
 
 export type Settings = { [K in keyof typeof OPTIONS]: keyof (typeof OPTIONS)[K] };
@@ -23,6 +24,7 @@ export const DEFAULTS: Settings = {
   density: 'comfortable',
   titles: 'one-line',
   sizing: 'fit-content',
+  duplicates: 'mark',
 };
 
 const SETTINGS_KEY = 'settings';
@@ -37,7 +39,7 @@ export function toSettings(value: unknown): Settings {
     const option = stored[key];
     return typeof option === 'string' && Object.hasOwn(OPTIONS[key], option) ? (option as Settings[K]) : DEFAULTS[key];
   };
-  return { layout: pick('layout'), theme: pick('theme'), density: pick('density'), titles: pick('titles'), sizing: pick('sizing') };
+  return { layout: pick('layout'), theme: pick('theme'), density: pick('density'), titles: pick('titles'), sizing: pick('sizing'), duplicates: pick('duplicates') };
 }
 
 export async function getSettings(): Promise<Settings> {

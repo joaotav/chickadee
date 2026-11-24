@@ -129,13 +129,16 @@ export function toSpaces(workspace: BookmarkNode, icons: Icons = new Map()): Spa
 export const placeName = (space: Space, category?: Category) =>
   category ? `${space.name} › ${category.title}` : space.name === UNSORTED ? UNSORTED : `${space.name} › ${UNSORTED}`;
 
-const sameUrl = (a: string, b: string) => {
+/** A URL written the way the browser writes it, so "https://github.com" and "https://github.com/" match. */
+const urlKey = (url: string) => {
   try {
-    return new URL(a).href === new URL(b).href;
+    return new URL(url).href;
   } catch {
-    return a === b;
+    return url;
   }
 };
+
+const sameUrl = (a: string, b: string) => urlKey(a) === urlKey(b);
 
 /** Every place in the workspace that already holds a link to `url`. */
 export function placesOf(spaces: Space[], url: string): string[] {
@@ -144,4 +147,33 @@ export function placesOf(spaces: Space[], url: string): string[] {
     ...(has(space.unsorted) ? [placeName(space)] : []),
     ...space.categories.filter((category) => has(category.links)).map((category) => placeName(space, category)),
   ]);
+}
+
+/**
+ * For each link saved more than once, by link ID, the other places it's saved in, like
+ * "💼 Work › Repos", or "this category" for another copy next to it.
+ */
+export function otherCopies(spaces: Space[]): Map<string, string[]> {
+  const copies = new Map<string, { id: string; place: string }[]>();
+  const add = (links: Link[], place: string) => {
+    for (const link of links) {
+      const key = urlKey(link.url);
+      copies.set(key, [...(copies.get(key) ?? []), { id: link.id, place }]);
+    }
+  };
+  for (const space of spaces) {
+    add(space.unsorted, joinEmoji(space.emoji, placeName(space)));
+    for (const category of space.categories) add(category.links, joinEmoji(space.emoji, placeName(space, category)));
+  }
+  const others = new Map<string, string[]>();
+  for (const list of copies.values()) {
+    if (list.length < 2) continue;
+    for (const copy of list) {
+      others.set(
+        copy.id,
+        list.filter((other) => other !== copy).map((other) => (other.place === copy.place ? 'this category' : other.place)),
+      );
+    }
+  }
+  return others;
 }

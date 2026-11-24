@@ -12,6 +12,7 @@ How the extension changes from one version to the next. See [CONTRIBUTING.md](CO
 
 - **Edit a bookmark's title and URL in one form,** from **Edit bookmark** in its **⋯** menu, which replaces **Rename** and **Edit URL**. The form is the same as **+ Add bookmark** ([#82](https://github.com/joaotav/chickadee/issues/82))
 - **Spaces, and categories in the same space, can't share a name.** **New space**, **Rename space**, **+ New category**, a category's **Rename** and the popup's **All tabs** say so when a name is taken, ignoring the space's icon and letter case. Moving a category to a space that already has one with its name asks to merge them, and **Undo** splits them again ([#92](https://github.com/joaotav/chickadee/issues/92))
+- **Links saved more than once are marked,** with a red warning sign. Clicking it lists the other places the link is saved in, so you can delete the copies you don't need. Turn the marks off in the settings panel, under **Links saved more than once** ([#45](https://github.com/joaotav/chickadee/issues/45))
 
 ### Bug fixes
 

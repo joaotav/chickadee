@@ -1,5 +1,6 @@
 <script lang="ts">
   import { defaultTitle, type Link } from '@/lib/tree';
+  import DuplicateMark from './DuplicateMark.svelte';
   import Grip from './Grip.svelte';
   import LinkForm from './LinkForm.svelte';
   import LinkIcon from './LinkIcon.svelte';
@@ -11,6 +12,7 @@
     ondelete,
     places = [],
     onmove,
+    alsoIn = [],
   }: {
     link: Link;
     /** Changes the link's title, URL or both. Without it, the link can't be edited. */
@@ -19,6 +21,8 @@
     /** The categories the link can move to, by space, and moving it to one. */
     places?: PlaceGroup[];
     onmove?: (categoryId: string) => void;
+    /** The other places the link is saved in, when it's saved more than once and those are marked. */
+    alsoIn?: string[];
   } = $props();
 
   let editing = $state(false);
@@ -52,7 +56,7 @@
   </span>
 {/snippet}
 
-<div class="row" bind:this={row}>
+<div class="row" class:duplicate={alsoIn.length > 0 && !editing} bind:this={row}>
   {#if editing}
     <LinkForm url={link.url} title={link.title} submit="Save" onsave={save} oncancel={() => (editing = false)} />
   {:else if link.openable}
@@ -69,6 +73,9 @@
   {/if}
   {#if !editing}
     <Grip label="Move {link.title}" />
+  {/if}
+  {#if alsoIn.length > 0 && !editing}
+    <DuplicateMark places={alsoIn} />
   {/if}
   {#if onupdate && !editing}
     <Menu
@@ -88,13 +95,28 @@
     display: flex;
     align-items: center;
   }
-  /* The menu button sits over the end of the row and shows on hover or keyboard focus. */
+  /* The menu button sits over the end of the row and fades in with the row's highlight, on
+     hover or keyboard focus, but not for the focus a click leaves on the duplicate mark. */
   .row > :global(.menu) {
     position: absolute;
     right: 6px;
+    transition: opacity 0.15s;
   }
-  .row:not(:hover, :focus-within) > :global(.menu:not(.open)) {
+  .row:not(:hover, :has(:focus-visible)) > :global(.menu:not(.open)) {
     opacity: 0;
+  }
+  /* The duplicate mark sits just left of the menu button, so the button never covers it, and
+     it doesn't move from under the pointer. It's a button of its own: the pointer on it
+     lights only the mark. */
+  .row > :global(.duplicate-mark) {
+    position: absolute;
+    right: 32px;
+  }
+  .row:has(> :global(.duplicate-mark:hover)) > :global(.menu:not(.open)) {
+    opacity: 0;
+  }
+  .duplicate .link {
+    padding-right: 60px;
   }
   /* The pointer drags the link itself, so the grip is only for the keyboard: it ignores the
      pointer and shows as an outline around the row when tabbed to. */

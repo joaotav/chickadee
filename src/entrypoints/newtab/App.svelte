@@ -16,7 +16,7 @@
   import { isFolder, type BookmarkNode } from '@/lib/node';
   import { getActiveSpaceId, getCollapsed, getIcons, setActiveSpaceId, setCollapsed, watchCollapsed, watchIcons } from '@/lib/meta';
   import { cacheSettings, getCachedSettings, getSettings, setSettings, watchSettings, type Settings } from '@/lib/settings';
-  import { defaultTitle, joinEmoji, sameName, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
+  import { defaultTitle, joinEmoji, otherCopies, sameName, toSpaces, UNSORTED, type Category, type Link, type Space } from '@/lib/tree';
   import { pickFile, saveFile } from '@/lib/files';
   import { importFile, takenSpaces, undoImport } from '@/lib/import';
   import { openInBackground } from '@/lib/tabs';
@@ -174,6 +174,9 @@
   // which holds links only, and their categories.
   const spaceLabel = (space: Space) => joinEmoji(space.emoji, space.name);
   const realSpaces = $derived((spaces ?? []).filter(isRealSpace));
+
+  // Links saved more than once, marked unless the settings say not to.
+  const alsoIn = $derived(settings.duplicates === 'mark' ? otherCopies(spaces ?? []) : new Map<string, string[]>());
   const otherSpaces = $derived<PlaceGroup[]>(
     realSpaces.length > 1
       ? [{ places: realSpaces.filter((space) => space.id !== active?.id).map((space) => ({ id: space.id, label: spaceLabel(space) })) }]
@@ -422,6 +425,7 @@
               onmove={(spaceId) => moveCategory(category, spaceId)}
               linkPlaces={categories}
               onmovelinkto={moveLink}
+              {alsoIn}
             />
           {:else if card.id === NEW_CATEGORY}
             <NewCategory oncreate={(title) => void create(active.id, title)} taken={categoryNames()} />
@@ -439,6 +443,7 @@
               onmovelink={(id, before) => moveItem(id, active.id, before)}
               linkPlaces={categories}
               onmovelinkto={moveLink}
+              {alsoIn}
             />
           {/if}
         </div>

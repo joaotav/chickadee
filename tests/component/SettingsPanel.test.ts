@@ -31,6 +31,7 @@ describe('SettingsPanel', () => {
       'Density',
       'Titles',
       'Card sizing',
+      'Links saved more than once',
     ]);
     expect(screen.getByRole('radio', { name: 'Grid' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Dracula' })).toBeChecked();
@@ -38,6 +39,7 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('radio', { name: 'Comfortable' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'One line' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Fit content' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Mark them' })).toBeChecked();
   });
 
   it('reports the whole settings object when a choice changes', async () => {
