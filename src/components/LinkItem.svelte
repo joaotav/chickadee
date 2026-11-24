@@ -195,7 +195,6 @@
     color: var(--fg);
     text-decoration: none;
     white-space: nowrap;
-    transition: background 0.15s;
   }
   a.link:hover {
     background: var(--row-hover);
@@ -268,12 +267,13 @@
     height: 22px;
     padding: 0 4px;
     border-radius: 5px;
-    transition: background 0.15s;
     color: var(--muted);
     font-size: 11px;
     font-weight: 600;
   }
-  /* See-through, so it shows the row's own color as the row lights up and fades. */
+  /* See-through, so it shows the row's own color. Hover colors in the row change at once,
+     with no fade: the link, the mark and the ⋯ button switch in the same frame, where fading
+     ones darkened for a moment when the pointer moved between them. */
   .mark:hover,
   .open .mark {
     background: var(--row-hover);
